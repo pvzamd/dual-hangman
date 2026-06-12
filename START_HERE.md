@@ -15,13 +15,13 @@ Dual Hangman is a real-time two-player browser game. Each player sets a secret w
 
 ## 2. Current Status
 
-|                     |                                                                                                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Completed**       | Phase 0 (repository foundation), Phase 1 (scaffolding, typed socket contract, skeletons)                                                                              |
-| **Current phase**   | **Phase 2 — Lobby System** (not started)                                                                                                                              |
-| **Next task**       | Implement `RoomManager.joinRoom` + wire `create_room` / `join_room` / `leave_room` socket handlers; see the Phase 2 checklist in [docs/PROGRESS.md](docs/PROGRESS.md) |
-| **Working**         | `npm run dev` / `build` / `lint` / `typecheck`; server `/health` + Socket.IO handshake verified                                                                       |
-| **Not working yet** | All gameplay — every socket handler returns `NOT_IMPLEMENTED` by design                                                                                               |
+|                     |                                                                                                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Completed**       | Phase 0 (foundation), Phase 1 (scaffolding + typed contract), Phase 2 (lobby system incl. basic reconnection)                                                     |
+| **Current phase**   | **Phase 3 — Word Setup** (not started)                                                                                                                            |
+| **Next task**       | Implement `submit_secret_word` (validation, storage, transition to `playing` + `game_started`); see the Phase 3 checklist in [docs/PROGRESS.md](docs/PROGRESS.md) |
+| **Working**         | Create/join/leave rooms, lobby sync, localStorage identity, reconnection with 60s grace; 12 unit tests; `npm run dev/build/lint/typecheck/test`                   |
+| **Not working yet** | Gameplay — `submit_secret_word`, `guess_letter`, `chat_message` still return `NOT_IMPLEMENTED`                                                                    |
 
 > Keep this table phase-accurate. Fine-grained, always-current state lives in [docs/PROGRESS.md](docs/PROGRESS.md) and [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md).
 
@@ -66,6 +66,7 @@ Full rationale and trade-offs in [docs/DECISIONS.md](docs/DECISIONS.md).
 | 007 | Reconnection = `reconnectToken` + 60 s grace period, then forfeit                                                                                           |
 | 008 | Node ≥ 22.12 baseline (dev on Node 24 LTS)                                                                                                                  |
 | 009 | **Win by full reveal only** — correct guess continues the turn, wrong guess passes it; no loss by wrong guesses; hangman figure is the cosmetic loss visual |
+| 010 | Lobby sync = `reconnect_player` → `state_sync` on every connect; leaving a two-player lobby reverts the room to waiting instead of destroying it            |
 
 ---
 

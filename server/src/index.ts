@@ -4,6 +4,7 @@ import cors from 'cors';
 import { Server } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '@dual-hangman/shared';
 import { registerSocketHandlers } from './socket/registerSocketHandlers.js';
+import type { GameServer, SocketData } from './socket/types.js';
 import { RoomManager } from './rooms/RoomManager.js';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -18,9 +19,12 @@ app.get('/health', (_req, res) => {
 
 const httpServer = createServer(app);
 
-export type GameServer = Server<ClientToServerEvents, ServerToClientEvents>;
-
-const io: GameServer = new Server(httpServer, {
+const io: GameServer = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  Record<string, never>,
+  SocketData
+>(httpServer, {
   cors: { origin: CLIENT_ORIGIN },
 });
 

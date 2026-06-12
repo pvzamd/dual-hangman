@@ -37,18 +37,21 @@
 - [x] Consistency sweep: ADR-001 React version amended; no other conflicts found
 - [x] README links START_HERE.md prominently
 
-## Phase 2 — Lobby System
+## Phase 2 — Lobby System ✅
 
-- [ ] `RoomManager.joinRoom` with validation
-- [ ] `create_room` handler → `room_created`
-- [ ] `join_room` handler → `room_joined` / `opponent_joined` / errors
-- [ ] `leave_room` handler
-- [ ] Client socket connect lifecycle
-- [ ] CreateRoomPage wired (emit + navigate)
-- [ ] JoinRoomPage wired (emit + error display)
-- [ ] LobbyPage reacts to `opponent_joined` / `word_setup_started`
-- [ ] Credentials persisted to localStorage
-- [ ] First Vitest tests (RoomManager)
+- [x] `RoomManager.joinRoom` with validation (not found / full / wrong phase)
+- [x] `RoomManager.leaveRoom` — last player destroys room; otherwise revert to waiting (ADR-010)
+- [x] `create_room` handler → `room_created`
+- [x] `join_room` handler → `room_joined` / `opponent_joined` / `word_setup_started` / errors
+- [x] `leave_room` handler → `state_sync` to remaining player
+- [x] Basic reconnection (pulled forward from Phase 6): `reconnect_player` validation, socket rebind, `state_sync`, `opponent_disconnected`/`opponent_reconnected`, 60s grace timer
+- [x] Client socket connect lifecycle (`connect_error` surfaced in UI)
+- [x] CreateRoomPage wired (emit + navigate + error display)
+- [x] JoinRoomPage wired (emit + error display)
+- [x] LobbyPage: syncs via `reconnect_player` → `state_sync` on mount (ADR-010); reacts to `opponent_joined`, `word_setup_started`, disconnect/reconnect; leave button
+- [x] Credentials persisted to localStorage (`client/src/lib/identity.ts`); HomePage "return to room" link
+- [x] First Vitest tests — 12 RoomManager unit tests
+- [x] End-to-end smoke test of all lobby flows over real sockets
 
 ## Phase 3 — Word Setup
 
@@ -75,7 +78,7 @@
 
 ## Phase 6 — Polish & Resilience
 
-- [ ] Reconnection flow (token + grace + `state_sync`)
+- [ ] In-game reconnection: grace expiry during `playing` forfeits (lobby-level reconnection shipped in Phase 2)
 - [ ] Idle room sweep
 - [ ] Chat sidebar
 - [ ] Animations

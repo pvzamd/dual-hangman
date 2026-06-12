@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom';
+import { loadIdentity } from '../lib/identity';
 
 export default function HomePage() {
+  const identity = loadIdentity();
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-4">
       <div className="text-center">
         <h1 className="text-5xl font-bold tracking-tight">Dual Hangman</h1>
         <p className="mt-3 text-slate-400">
-          Two players. Two secret words. First to solve the other&apos;s word wins.
+          Two players. Two secret words. First to fully reveal the other&apos;s word wins.
         </p>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -23,6 +26,14 @@ export default function HomePage() {
           Join Room
         </Link>
       </div>
+      {identity && (
+        <Link
+          to={`/lobby/${identity.roomCode}`}
+          className="text-sm text-emerald-400 underline-offset-4 transition hover:underline"
+        >
+          Return to room {identity.roomCode} as {identity.playerName}
+        </Link>
+      )}
     </main>
   );
 }

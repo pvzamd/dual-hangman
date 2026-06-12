@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 4)
+> Last updated: 2026-06-13 (end of Session 5)
 
 ---
 
@@ -17,9 +17,9 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 ## Current Phase
 
-**Phase 1 — Project Scaffolding (COMPLETE)**
+**Phase 2 — Lobby System (COMPLETE)**
 
-The three-package workspace builds, lints, typechecks, and the server smoke-tests clean. All socket handlers are registered but return `NOT_IMPLEMENTED`. **Next: Phase 2 — Lobby System** (see PROGRESS.md for the checklist).
+Rooms can be created, joined, left, and rejoined: lobby sync + localStorage identity + reconnection with a 60s grace timer all work end-to-end (smoke-tested over real sockets; 12 Vitest unit tests on RoomManager). `submit_secret_word` / `guess_letter` / `chat_message` remain `NOT_IMPLEMENTED` stubs. **Next: Phase 3 — Word Setup** (see PROGRESS.md for the checklist).
 
 ---
 
@@ -43,13 +43,16 @@ Full details in `docs/ARCHITECTURE.md`. Key invariant: **the server is authorita
 ```
 shared/src/events.ts        ← typed socket contract (compile-time truth)
 shared/src/types.ts         ← GameView / BoardView / PlayerInfo / ErrorCode
-shared/src/constants.ts     ← word limits, room code charset, grace period
+shared/src/constants.ts     ← word/name limits, room code charset, grace period
 client/src/socket.ts        ← typed client singleton (autoConnect: false)
-client/src/pages/           ← HomePage, CreateRoomPage, JoinRoomPage, LobbyPage
+client/src/lib/identity.ts  ← localStorage identity (save/load/clear)
+client/src/pages/           ← Home, Create, Join, Lobby — all wired to the socket
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health
-server/src/socket/registerSocketHandlers.ts  ← all handlers (stubs)
-server/src/rooms/RoomManager.ts              ← room map + ServerPlayer (skeleton)
-server/src/game/GameManager.ts               ← rules engine (skeleton)
+server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
+server/src/socket/registerSocketHandlers.ts  ← lobby handlers live; word/guess/chat stubs
+server/src/rooms/RoomManager.ts              ← rooms, join/leave, reconnect, grace timers
+server/src/rooms/roomView.ts                 ← Room → GameView projection
+server/src/game/GameManager.ts               ← rules engine (skeleton, Phase 4)
 ```
 
 ---
@@ -66,15 +69,14 @@ npm run format       # prettier
 
 ---
 
-## Outstanding Tasks (Phase 2 — Lobby System)
+## Outstanding Tasks (Phase 3 — Word Setup)
 
-- [ ] `RoomManager.joinRoom` (capacity + phase validation)
-- [ ] Wire `create_room` / `join_room` / `leave_room` handlers (replace NOT_IMPLEMENTED stubs)
-- [ ] Client: connect socket, wire Create/Join pages, Lobby reacts to `opponent_joined`
-- [ ] Persist `{ roomCode, playerId, reconnectToken }` to localStorage
-- [ ] Start Vitest with RoomManager unit tests
+- [ ] Server: `submit_secret_word` — validate (MIN/MAX_WORD_LENGTH, VALID_WORD_PATTERN, uppercase), store on ServerPlayer, emit `opponent_word_ready`
+- [ ] Server: when both words in → phase `playing`, random first turn, emit `game_started` (needs first real GameManager state)
+- [ ] Client: secret word input screen replacing the Phase-3 placeholder in LobbyPage
+- [ ] Tests for word validation + transition
 
-Then Phase 3 (word setup) → Phase 4 (gameplay). Full roadmap in `docs/ROADMAP.md`.
+Then Phase 4 (gameplay — read ADR-009 first). Full roadmap in `docs/ROADMAP.md`.
 
 ---
 
@@ -82,8 +84,9 @@ Then Phase 3 (word setup) → Phase 4 (gameplay). Full roadmap in `docs/ROADMAP.
 
 - Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
 - Claude Code harness quirks (npm.cmd etc.) live in `CLAUDE.md`.
-- No tests exist yet — start them with Phase 2 server logic.
-- `alert()` placeholders in Create/Join pages are intentional Phase-2 TODOs.
+- Tests: server only so far (`npm run test` → 12 Vitest tests). No client tests yet.
+- `leaveRoom` + grace-expiry currently revert/destroy the room — both call sites carry a TODO to forfeit instead during `playing` (Phase 4).
+- LobbyPage shows a "Word setup arrives in Phase 3" placeholder once the opponent joins — that is the Phase 3 starting point.
 
 ---
 
@@ -92,6 +95,6 @@ Then Phase 3 (word setup) → Phase 4 (gameplay). Full roadmap in `docs/ROADMAP.
 - TypeScript only; no plain JS in `src/` directories.
 - Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
 - Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: correct guess → guess again; wrong guess → turn passes; win by full reveal only (ADR-004 + ADR-009).
-- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-010).
+- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-011).
 - Follow the mandatory documentation maintenance rules in `START_HERE.md` §8 — tick `docs/PROGRESS.md`, append to `docs/SESSION_NOTES.md`, and refresh this file before ending a session.
 - Never commit `.env`; keep `.env.example` files current.

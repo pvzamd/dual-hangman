@@ -24,13 +24,13 @@ Dual Hangman is a real-time two-player browser game where players guess each oth
 | Dev workflow | `tsx watch` (server), Vite (client)            | Instant restarts/HMR; `concurrently` runs both from root       |
 | Build        | Vite (client), tsup (server)                   | Single-file ESM server bundle including shared types           |
 | Lint/format  | ESLint 10 (flat config) + Prettier             | Consistent style across all three packages                     |
-| Testing      | Vitest (client) + node test or Vitest (server) | To be set up when first logic lands (Phase 2+)                 |
+| Testing      | Vitest (server live since Phase 2; client TBD) | Unit tests start with the logic they cover                     |
 | Hosting      | TBD (see DEPLOYMENT.md)                        | Likely Railway/Render for server; Vercel/Netlify for client    |
 
 ## Current Status
 
-**Phase 1 — Project Scaffolding (complete)**
+**Phase 2 — Lobby System (complete)**
 
-Three-package npm workspace is scaffolded, building, linting, and smoke-tested: typed socket contract in `shared/`, React app with home/create/join/lobby skeleton pages, Express + Socket.IO server with `/health` and skeleton handlers. **No gameplay logic yet** — next is Phase 2 (lobby system).
+The lobby works end-to-end: create/join/leave rooms, live lobby sync, localStorage identity, and reconnection with a 60-second grace window (ADR-010). Server logic is unit-tested with Vitest. **Word setup and gameplay are next** — Phase 3 then Phase 4.
 
 See [ROADMAP.md](ROADMAP.md) for upcoming phases and [PROGRESS.md](PROGRESS.md) for fine-grained task tracking.

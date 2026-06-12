@@ -203,3 +203,26 @@ Node 18 (previous dev machine default) is end-of-life and below the minimum for 
 - `MAX_WRONG_GUESSES` removed from shared constants; `BoardView.maxWrongGuesses` removed; `GameOverReason` narrowed to `word_solved | opponent_forfeit`. Done before any gameplay logic existed, so no migration cost.
 
 ---
+
+## ADR-010 — Lobby Sync via `reconnect_player`; Leave Reverts the Room
+
+**Date:** 2026-06-13 (Phase 2)  
+**Status:** Accepted
+
+### Decision
+
+1. **One sync path:** on lobby mount the client always emits `reconnect_player` with its stored identity and renders from the server's `state_sync` reply. The same path serves fresh navigation, page refresh, and socket auto-reconnects (the client re-emits on every `connect`).
+2. **Leave reverts, not destroys:** when one of two players leaves (explicitly or by grace-timer expiry) during lobby phases, the room reverts to `waiting_for_opponent` and the remaining player gets a `state_sync` — the room code stays shareable. Only the last player out destroys the room.
+3. Identity (`roomCode`, `playerId`, `reconnectToken`, `playerName`) persists in `localStorage`; it is cleared on explicit leave or a `RECONNECT_REJECTED` reply.
+
+### Rationale
+
+- A dedicated `get_state` event would duplicate what `reconnect_player` already does (validate identity → rebind → `state_sync`). One code path means refresh, navigation, and true reconnection cannot drift apart.
+- Reverting instead of destroying keeps the lobby forgiving: the waiting player does not need to create a new room and re-share a code because their friend's browser crashed.
+
+### Trade-offs
+
+- `reconnect_player` is semantically overloaded (it is also the "give me my state" request). Accepted for protocol economy; rename to `resume_session` later if it confuses.
+- During `playing` (Phase 4), leave/grace-expiry must forfeit (`game_won`) instead of reverting — marked as TODOs at both call sites.
+
+---

@@ -101,3 +101,26 @@ Unchanged from Session 2: begin **Phase 2 — Lobby System** (PROGRESS.md checkl
 Unchanged: begin **Phase 2 — Lobby System** (PROGRESS.md checklist). Phase 4 implementers: read ADR-009 before writing `GameManager.guessLetter`.
 
 ---
+
+## Session 5 — 2026-06-13
+
+### Work Completed
+
+- **Phase 2 (Lobby System) complete**, including basic reconnection pulled forward from Phase 6.
+- Server: `RoomManager` implemented (joinRoom with not-found/full/wrong-phase validation; leaveRoom with revert-or-destroy semantics; validateReconnect; grace timers). New `rooms/roomView.ts` projects Room → client-safe `GameView`. New `socket/types.ts` adds `SocketData` (roomCode/playerId per socket).
+- Server handlers live: `create_room`, `join_room` (notifies host via `opponent_joined` + broadcasts `word_setup_started`), `leave_room`, `reconnect_player` (rebind + `state_sync` + `opponent_reconnected`), `disconnect` (marks away, `opponent_disconnected`, 60s grace → removal). Word/guess/chat remain stubs.
+- Client: `lib/identity.ts` (localStorage save/load/clear with shape validation); Create/Join pages emit and navigate with inline error display; LobbyPage syncs via `reconnect_player` → `state_sync` on every socket `connect` (ADR-010), shows both players + connection dots + grace countdown notice, leave button; HomePage offers "Return to room" when an identity is stored.
+- Shared: added `MAX_PLAYER_NAME_LENGTH` (used by server validation and client inputs).
+- Tests: Vitest added to server — 12 RoomManager unit tests. Root `npm run test` wired.
+- Verified: typecheck, lint, tests, builds; live end-to-end smoke test covering create, join, sync, disconnect-grace, fresh-socket reconnect, bad-token/unknown-room/full-room rejections, leave-revert, and room destruction.
+
+### Decisions Made This Session
+
+- **ADR-010**: lobby sync reuses `reconnect_player` → `state_sync` (one path for navigation, refresh, and reconnects); leaving a two-player lobby reverts the room to `waiting_for_opponent` instead of destroying it.
+- ESLint: new react-hooks rules forbid ref writes during render — refs are now written in event handlers only.
+
+### Next Recommended Action
+
+Begin **Phase 3 — Word Setup**: implement `submit_secret_word` (validate with `MIN/MAX_WORD_LENGTH` + `VALID_WORD_PATTERN`, store uppercase, emit `opponent_word_ready`), transition to `playing` + `game_started` with a random first turn when both words are in, and replace LobbyPage's Phase-3 placeholder with the secret-word form. Note the two Phase-4 TODOs at `leaveRoom`/grace-expiry call sites (forfeit during `playing`).
+
+---

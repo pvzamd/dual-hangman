@@ -1,16 +1,58 @@
-import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { ROOM_CODE_LENGTH } from '@dual-hangman/shared';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  MAX_PLAYER_NAME_LENGTH,
+  ROOM_CODE_LENGTH,
+  type ErrorPayload,
+  type RoomJoinedPayload,
+} from '@dual-hangman/shared';
+import { socket } from '../socket';
+import { saveIdentity } from '../lib/identity';
 
 export default function JoinRoomPage() {
+  const navigate = useNavigate();
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const nameRef = useRef('');
+
+  useEffect(() => {
+    const onJoined = (payload: RoomJoinedPayload) => {
+      saveIdentity({
+        roomCode: payload.roomCode,
+        playerId: payload.playerId,
+        reconnectToken: payload.reconnectToken,
+        playerName: nameRef.current,
+      });
+      navigate(`/lobby/${payload.roomCode}`);
+    };
+    const onError = (payload: ErrorPayload) => {
+      setPending(false);
+      setError(payload.message);
+    };
+    const onConnectError = () => {
+      setPending(false);
+      setError('Cannot reach the game server — is it running?');
+    };
+
+    socket.on('room_joined', onJoined);
+    socket.on('error_occurred', onError);
+    socket.on('connect_error', onConnectError);
+    return () => {
+      socket.off('room_joined', onJoined);
+      socket.off('error_occurred', onError);
+      socket.off('connect_error', onConnectError);
+    };
+  }, [navigate]);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    // TODO Phase 2: socket.connect() + emit join_room, navigate to
-    // /lobby/:roomCode on the room_joined event.
-    alert('Room joining arrives in Phase 2 (lobby system).');
+    nameRef.current = playerName.trim();
+    setError(null);
+    setPending(true);
+    socket.connect();
+    socket.emit('join_room', { roomCode: roomCode.trim(), playerName: nameRef.current });
   }
 
   return (
@@ -28,7 +70,7 @@ export default function JoinRoomPage() {
             onChange={(e) => setPlayerName(e.target.value)}
             required
             minLength={1}
-            maxLength={20}
+            maxLength={MAX_PLAYER_NAME_LENGTH}
             placeholder="e.g. Asha"
             className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 outline-none focus:border-emerald-500"
           />
@@ -46,11 +88,15 @@ export default function JoinRoomPage() {
             className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-mono tracking-widest uppercase outline-none focus:border-emerald-500"
           />
         </label>
+        {error && (
+          <p className="rounded-lg bg-red-900/40 px-3 py-2 text-sm text-red-300">{error}</p>
+        )}
         <button
           type="submit"
-          className="w-full rounded-lg bg-emerald-600 py-2.5 font-semibold transition hover:bg-emerald-500"
+          disabled={pending}
+          className="w-full rounded-lg bg-emerald-600 py-2.5 font-semibold transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Join Room
+          {pending ? 'Joining…' : 'Join Room'}
         </button>
         <Link to="/" className="block text-center text-sm text-slate-400 hover:text-slate-200">
           Back

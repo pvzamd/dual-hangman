@@ -22,14 +22,16 @@
 - [x] Architecture documented: room lifecycle, turn model, win conditions, reconnection (ADRs 004–008)
 - [x] Verified: typecheck, lint, prod builds, `/health` + Socket.IO handshake smoke test
 
-## Phase 2 — Lobby System
+## Phase 2 — Lobby System ✅
 
-- [ ] Server: implement `RoomManager.joinRoom` (capacity, phase validation)
-- [ ] Server: wire `create_room`, `join_room`, `leave_room` handlers
-- [ ] Client: connect socket; CreateRoomPage emits `create_room`, navigates on `room_created`
-- [ ] Client: JoinRoomPage emits `join_room`, handles `ROOM_NOT_FOUND` / `ROOM_FULL`
-- [ ] Client: LobbyPage reacts to `opponent_joined` / `word_setup_started`
-- [ ] Persist `{ roomCode, playerId, reconnectToken }` to localStorage (groundwork for Phase 6)
+- [x] Server: `RoomManager.joinRoom` (capacity, phase validation) + `leaveRoom` (revert-or-destroy, ADR-010)
+- [x] Server: `create_room`, `join_room`, `leave_room` handlers wired
+- [x] Server: basic reconnection pulled forward from Phase 6 — `reconnect_player`, grace timer, `state_sync`
+- [x] Client: CreateRoomPage emits `create_room`, navigates on `room_created`
+- [x] Client: JoinRoomPage emits `join_room`, surfaces `ROOM_NOT_FOUND` / `ROOM_FULL`
+- [x] Client: LobbyPage syncs via `reconnect_player` → `state_sync` (ADR-010), reacts to lobby events
+- [x] Identity persisted to localStorage; HomePage rejoin link
+- [x] Vitest started: 12 RoomManager unit tests
 
 ## Phase 3 — Word Setup
 
@@ -55,7 +57,7 @@
 
 ## Phase 6 — Polish & Resilience
 
-- [ ] Reconnection: `reconnect_player` + grace timer + `state_sync` (ADR-007)
+- [ ] In-game reconnection: grace expiry during `playing` → forfeit via `game_won` (ADR-007; lobby-level reconnection shipped in Phase 2)
 - [ ] Idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`)
 - [ ] Chat sidebar (`chat_message`)
 - [ ] Animations (letter reveal, hangman draw)

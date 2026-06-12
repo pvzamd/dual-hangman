@@ -36,17 +36,21 @@ dual-hangman/
 ├── client/                  @dual-hangman/client — React SPA
 │   ├── public/
 │   └── src/
-│       ├── pages/           ← HomePage, CreateRoomPage, JoinRoomPage, LobbyPage
+│       ├── pages/           ← HomePage, CreateRoomPage, JoinRoomPage, LobbyPage (wired)
+│       ├── lib/identity.ts  ← localStorage identity persistence (ADR-010)
 │       ├── socket.ts        ← typed Socket.IO client singleton
 │       ├── App.tsx          ← routes
 │       ├── main.tsx         ← entry
 │       └── index.css        ← Tailwind entry (@import 'tailwindcss')
 ├── server/                  @dual-hangman/server — Node backend
 │   └── src/
-│       ├── index.ts                        ← Express + Socket.IO bootstrap, /health
-│       ├── socket/registerSocketHandlers.ts ← per-connection event registration
-│       ├── rooms/RoomManager.ts            ← room map, codes, ServerPlayer model
-│       └── game/GameManager.ts             ← per-room rules engine (skeleton)
+│       ├── index.ts                         ← Express + Socket.IO bootstrap, /health
+│       ├── socket/types.ts                  ← GameServer/GameSocket generics + SocketData
+│       ├── socket/registerSocketHandlers.ts ← lobby handlers live; word/guess/chat stubbed
+│       ├── rooms/RoomManager.ts             ← rooms, join/leave, reconnect, grace timers
+│       ├── rooms/RoomManager.test.ts        ← Vitest unit tests
+│       ├── rooms/roomView.ts                ← Room → client-safe GameView projection
+│       └── game/GameManager.ts              ← per-room rules engine (skeleton, Phase 4)
 └── docs/
 ```
 
@@ -163,11 +167,12 @@ Clients only ever receive `GameView` — a per-player projection built by `GameM
 
 **Anti-cheat invariant:** the opponent's unsolved word never appears in any payload. Guess validation, turn order, and win detection are exclusively server-side.
 
-## Reconnection Strategy
+## Reconnection Strategy (lobby-level implemented in Phase 2)
 
-1. `room_created` / `room_joined` give the client `{ roomCode, playerId, reconnectToken }`; the client persists them in `localStorage`.
+1. `room_created` / `room_joined` give the client `{ roomCode, playerId, reconnectToken }`; the client persists them in `localStorage` (`client/src/lib/identity.ts`).
 2. On disconnect, the server marks the player `connected: false`, starts a `RECONNECT_GRACE_SECONDS` (60s) timer, and notifies the opponent (`opponent_disconnected`).
-3. The reconnecting client emits `reconnect_player` with its stored credentials. The server validates the token, rebinds the new socket, cancels the timer, replies with `state_sync`, and notifies the opponent.
-4. If the timer expires mid-game, the absent player forfeits (`game_won` with `opponent_forfeit`). In the lobby, the room is simply destroyed.
+3. The reconnecting client emits `reconnect_player` with its stored credentials. The server validates the token, rebinds the new socket, cancels the timer, replies with `state_sync`, and notifies the opponent (`opponent_reconnected`).
+4. The lobby page uses the **same path as its mount-time sync** (ADR-010): it emits `reconnect_player` on every socket `connect`, so refresh, navigation, and transient drops all converge on `state_sync`.
+5. Grace expiry in lobby phases removes the player — the room reverts to `waiting_for_opponent` (or is destroyed if empty). **TODO Phase 4:** expiry during `playing` must forfeit (`game_won` with `opponent_forfeit`) instead.
 
 Game state lives only in server memory, so a **server** restart still ends all games (accepted — ADR-002).

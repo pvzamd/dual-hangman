@@ -4,6 +4,9 @@
 export const MIN_WORD_LENGTH = 3;
 export const MAX_WORD_LENGTH = 12;
 
+/** Player display name length bounds (after trimming). */
+export const MAX_PLAYER_NAME_LENGTH = 20;
+
 /** Secret words and guesses must match this after uppercasing. */
 export const VALID_WORD_PATTERN = /^[A-Z]+$/;
 export const VALID_LETTER_PATTERN = /^[A-Z]$/;
