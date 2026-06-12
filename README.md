@@ -4,6 +4,8 @@ A real-time two-player browser game: each player sets a secret word, then they t
 
 **Status:** Phase 1 complete — workspace scaffolded with a typed socket contract and skeleton pages/server. Gameplay logic starts in Phase 2 (lobby system).
 
+> **Contributing or resuming development (human or AI)? Read [START_HERE.md](START_HERE.md) first** — it maps all documentation, the development workflow, and the maintenance rules.
+
 ---
 
 ## How It Works
@@ -58,7 +60,8 @@ dual-hangman/
 ├── server/           # Node + Express 5 + Socket.IO backend
 │   └── src/          # index.ts, socket/, rooms/, game/
 ├── docs/             # project documentation (see below)
-└── CLAUDE_CONTEXT.md # fast-load context for AI-assisted development
+├── START_HERE.md     # entry point for any new session — read first
+└── CLAUDE_CONTEXT.md # volatile session snapshot (phase, tasks, gotchas)
 ```
 
 ---
@@ -67,6 +70,7 @@ dual-hangman/
 
 | File                                                 | Purpose                                           |
 | ---------------------------------------------------- | ------------------------------------------------- |
+| [START_HERE.md](START_HERE.md)                       | **Entry point** — doc map, workflow, AI handoff   |
 | [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) | Goals, tech choices, status                       |
 | [docs/GAME_RULES.md](docs/GAME_RULES.md)             | Source of truth for game rules                    |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)         | System design, socket contract, models, lifecycle |

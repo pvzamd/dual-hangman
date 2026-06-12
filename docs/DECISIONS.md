@@ -11,7 +11,7 @@
 
 ### Decision
 
-Frontend: React 18 + TypeScript + Vite  
+Frontend: React + TypeScript + Vite (scaffolded as React 19 in Phase 1)  
 Backend: Node.js + Express + Socket.IO + TypeScript
 
 ### Rationale

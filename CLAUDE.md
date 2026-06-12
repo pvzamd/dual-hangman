@@ -1,19 +1,19 @@
-# Dual Hangman — Session Bootstrap
+# Dual Hangman — Claude Code Bootstrap
 
-**Read `CLAUDE_CONTEXT.md` first.** It holds the current phase, outstanding tasks, and next recommended step.
+**Read `START_HERE.md` first** — it is the entry point for every session (human or AI) and contains the documentation map, development workflow, and the mandatory documentation maintenance rules. Follow them.
 
-## Workflow rules for every session
+Quick orientation after that: `docs/PROGRESS.md` (what's done) → `CLAUDE_CONTEXT.md` (detailed task list and repo map) → latest entry of `docs/SESSION_NOTES.md`.
 
-1. Start by reading `CLAUDE_CONTEXT.md`, then `docs/PROGRESS.md`.
-2. When completing any task, tick it off in `docs/PROGRESS.md`.
-3. Before ending a session:
-   - Add an entry to `docs/SESSION_NOTES.md` (date, work done, next action).
-   - Update `CLAUDE_CONTEXT.md` if the phase or outstanding tasks changed.
-4. Gameplay rule changes go to `docs/GAME_RULES.md` first — it is the source of truth.
-5. Significant technical choices get an ADR in `docs/DECISIONS.md`.
+## Machine/tooling quirks (Claude Code on this Windows machine)
 
-## Conventions
+- **Use `npm.cmd`, not `npm`** — bare `npm` trips a harness error ("undefined is not an object"). Some commands (curl with query-string URLs, hyphenated script filenames) intermittently hit the same bug: rewrite the command simpler and redirect output to a file instead of retrying verbatim.
+- Node is managed by nvm-windows; this project needs Node ≥ 22.12 → `nvm use 24`. Don't assume the machine default — other local projects pin Node 14/16/18.
+- Prefer Git Bash over PowerShell for noisy commands; send output to a log file and read that.
 
-- TypeScript only in `client/src/` and `server/src/` — no plain JS.
-- Never commit `.env` files; keep `.env.example` current instead.
-- Socket event names/payloads live in one shared location (see `docs/ARCHITECTURE.md`).
+## Project conventions (enforced; full list in START_HERE.md §6)
+
+- TypeScript only in `src/` directories — no plain JS.
+- Socket events are defined ONLY in `shared/src/events.ts` (snake_case); both sides type against it. Keep `docs/ARCHITECTURE.md` tables in sync when it changes.
+- Gameplay changes: update `docs/GAME_RULES.md` **before** writing code.
+- Significant technical choices get the next ADR in `docs/DECISIONS.md`.
+- Never commit `.env`; keep `.env.example` files current.

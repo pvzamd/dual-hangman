@@ -1,8 +1,9 @@
 # Claude Context — Dual Hangman
 
-> This file is the fast-load context for any new Claude session.
-> Read this first. Update it at the end of every session.
-> Last updated: 2026-06-13 (end of Session 2)
+> Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
+> Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
+> Update this file at the end of every session.
+> Last updated: 2026-06-13 (end of Session 3)
 
 ---
 
@@ -79,8 +80,8 @@ Then Phase 3 (word setup) → Phase 4 (gameplay). Full roadmap in `docs/ROADMAP.
 
 ## Known Issues / Gotchas
 
-- **Use `npm.cmd`, not `npm`**, when running shell commands from Claude Code on this machine (bare `npm` trips a harness bug).
 - Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
+- Claude Code harness quirks (npm.cmd etc.) live in `CLAUDE.md`.
 - No tests exist yet — start them with Phase 2 server logic.
 - `alert()` placeholders in Create/Join pages are intentional Phase-2 TODOs.
 
@@ -92,5 +93,5 @@ Then Phase 3 (word setup) → Phase 4 (gameplay). Full roadmap in `docs/ROADMAP.
 - Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
 - Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: alternating, turn passes after every guess (ADR-004).
 - Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-009).
-- Tick `docs/PROGRESS.md` when finishing tasks; append to `docs/SESSION_NOTES.md` and refresh this file before ending a session.
+- Follow the mandatory documentation maintenance rules in `START_HERE.md` §8 — tick `docs/PROGRESS.md`, append to `docs/SESSION_NOTES.md`, and refresh this file before ending a session.
 - Never commit `.env`; keep `.env.example` files current.

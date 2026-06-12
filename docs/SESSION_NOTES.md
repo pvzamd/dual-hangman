@@ -59,3 +59,20 @@ Begin **Phase 1 — Project Scaffolding**:
 Begin **Phase 2 — Lobby System**: implement `RoomManager.joinRoom`, wire `create_room` / `join_room` / `leave_room` handlers, connect the client pages to the socket, and start Vitest with RoomManager unit tests. See PROGRESS.md Phase 2 checklist.
 
 ---
+
+## Session 3 — 2026-06-13
+
+### Work Completed
+
+- **Continuity & onboarding system** (no code changes).
+- Created `START_HERE.md`: universal tool-agnostic entry point with project summary, status, 60-second architecture, ADR summary table, documentation index (purpose / update triggers / authority per file), AI handoff section, 8-step development workflow, and mandatory documentation maintenance rules.
+- Established the authority model: GAME_RULES (rules), PROGRESS (completion), DECISIONS (choices), ROADMAP (scope), DEPLOYMENT (env/hosting), `shared/src/events.ts` (socket protocol); PROJECT_OVERVIEW/README/CLAUDE_CONTEXT are derived summaries; SESSION_NOTES is an append-only log whose old entries are never rewritten.
+- Deduplicated: `CLAUDE.md` is now a slim Claude-Code-specific bootstrap (read order + machine quirks like `npm.cmd`); the generic workflow rules moved to START_HERE.md; CLAUDE_CONTEXT no longer repeats the harness quirks.
+- Consistency sweep across all docs: only stale item found was ADR-001 still saying "React 18" — amended to note the React 19 scaffold. Session 1's log entry mentioning ts-node/two-package workspaces left untouched (append-only log; Session 2 records what actually happened).
+- README now points to START_HERE.md at the top.
+
+### Next Recommended Action
+
+Unchanged from Session 2: begin **Phase 2 — Lobby System** (PROGRESS.md checklist). New sessions should start from `START_HERE.md`.
+
+---

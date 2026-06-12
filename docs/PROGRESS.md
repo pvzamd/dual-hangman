@@ -29,6 +29,14 @@
 - [x] Verified: typecheck ✅ lint ✅ prod builds ✅ health + Socket.IO handshake ✅
 - [x] Docs updated: architecture, rules (turn-based), ADRs 004–008
 
+## Continuity & Onboarding (between Phases 1 and 2) ✅
+
+- [x] `START_HERE.md` — universal entry point with doc index, AI handoff, workflow, maintenance rules
+- [x] Documentation index with per-file purpose / update triggers / authority
+- [x] `CLAUDE.md` slimmed to Claude-specific bootstrap + machine quirks (deduplicated)
+- [x] Consistency sweep: ADR-001 React version amended; no other conflicts found
+- [x] README links START_HERE.md prominently
+
 ## Phase 2 — Lobby System
 
 - [ ] `RoomManager.joinRoom` with validation
