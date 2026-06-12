@@ -58,18 +58,19 @@
 
 ## Phase 4 — Core Gameplay
 
-- [ ] `guessLetter`: turn enforcement, reveal, wrong-guess counting
-- [ ] Win detection (word_solved / opponent_hanged)
+- [ ] `guessLetter`: turn enforcement — correct guess continues turn, wrong guess passes it (ADR-009)
+- [ ] Wrong-guess counting (statistics only — no penalty)
+- [ ] Win detection (`word_solved` only)
 - [ ] `buildViewFor` per-player projection
 - [ ] `useGame` hook
-- [ ] Hangman SVG figure
 - [ ] Word display (blanks + revealed letters)
 - [ ] On-screen keyboard with disabled guessed letters
 - [ ] Live board sync + turn indicator
 
 ## Phase 5 — Game Over & Restart
 
-- [ ] Result screen
+- [ ] Result screen (incl. wrong-guess stats)
+- [ ] Hangman figure as loser's defeat visual (ADR-009)
 - [ ] Rematch flow
 
 ## Phase 6 — Polish & Resilience

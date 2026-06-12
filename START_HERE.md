@@ -7,7 +7,7 @@
 
 ## 1. What This Project Is
 
-Dual Hangman is a real-time two-player browser game. Each player sets a secret word (3–12 letters); players then take **alternating turns** guessing letters of each other's word. Reveal the opponent's whole word to win; six wrong guesses and you're hanged. It is a production-quality hobby project by Parvez Ahmed, built to survive long development pauses — the documentation system you are reading exists so any session (human or AI) can resume cold.
+Dual Hangman is a real-time two-player browser game. Each player sets a secret word (3–12 letters); players then take turns guessing letters of each other's word — **a correct guess earns another guess, a wrong one passes the turn**. The only way to win is to fully reveal the opponent's word first; wrong guesses carry no penalty (the hangman figure is just the loser's defeat visual). It is a production-quality hobby project by Parvez Ahmed, built to survive long development pauses — the documentation system you are reading exists so any session (human or AI) can resume cold.
 
 **Repo:** https://github.com/pvzamd/dual-hangman · **License:** MIT
 
@@ -55,16 +55,17 @@ Full design (room lifecycle, turn model, win conditions, reconnection): [docs/AR
 
 Full rationale and trade-offs in [docs/DECISIONS.md](docs/DECISIONS.md).
 
-| ADR | Decision                                                                              |
-| --- | ------------------------------------------------------------------------------------- |
-| 001 | React + Vite + TS frontend; Node + Express + Socket.IO + TS backend                   |
-| 002 | **No database at MVP** — rooms live in server memory; one instance only               |
-| 003 | npm workspaces monorepo: `shared/`, `client/`, `server/`                              |
-| 004 | **Turn-based alternating guessing** — turn passes after every guess; draws impossible |
-| 005 | Tailwind CSS 4 via `@tailwindcss/vite`                                                |
-| 006 | `shared` is a source-only package (no build step)                                     |
-| 007 | Reconnection = `reconnectToken` + 60 s grace period, then forfeit                     |
-| 008 | Node ≥ 22.12 baseline (dev on Node 24 LTS)                                            |
+| ADR | Decision                                                                                                                                                    |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 001 | React + Vite + TS frontend; Node + Express + Socket.IO + TS backend                                                                                         |
+| 002 | **No database at MVP** — rooms live in server memory; one instance only                                                                                     |
+| 003 | npm workspaces monorepo: `shared/`, `client/`, `server/`                                                                                                    |
+| 004 | **Turn-based guessing** (amended by ADR-009); draws impossible                                                                                              |
+| 005 | Tailwind CSS 4 via `@tailwindcss/vite`                                                                                                                      |
+| 006 | `shared` is a source-only package (no build step)                                                                                                           |
+| 007 | Reconnection = `reconnectToken` + 60 s grace period, then forfeit                                                                                           |
+| 008 | Node ≥ 22.12 baseline (dev on Node 24 LTS)                                                                                                                  |
+| 009 | **Win by full reveal only** — correct guess continues the turn, wrong guess passes it; no loss by wrong guesses; hangman figure is the cosmetic loss visual |
 
 ---
 

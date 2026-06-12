@@ -79,7 +79,7 @@ Use a single repository with `npm workspaces`: `shared/`, `client/`, and `server
 ## ADR-004 — Turn-Based (Alternating) Guessing
 
 **Date:** 2026-06-13 (resolved in Phase 1)  
-**Status:** Accepted
+**Status:** Accepted — turn-passing and loss rules amended by ADR-009
 
 ### Decision
 
@@ -173,5 +173,33 @@ Require Node ≥ 22.12 (`engines` in root package.json); develop on Node 24 LTS.
 ### Rationale
 
 Node 18 (previous dev machine default) is end-of-life and below the minimum for Vite 7+/8 and Tailwind 4. Node 24 is the newest LTS (supported to 2028), which suits a project that may pause for long stretches.
+
+---
+
+## ADR-009 — Win by Reveal Only; Wrong Guesses Carry No Penalty
+
+**Date:** 2026-06-13  
+**Status:** Accepted (aligns the rules with the original game design; amends ADR-004)
+
+### Decision
+
+1. A **correct guess grants another immediate guess** — the turn continues until a wrong guess.
+2. A **wrong guess ends the turn** and passes control to the opponent.
+3. The **6-wrong-guess loss condition is removed**; `opponent_hanged` no longer exists as a game-over reason.
+4. The **only gameplay win condition is fully revealing the opponent's word** (forfeit remains as a non-gameplay outcome).
+5. Wrong guesses are still **counted for statistics/UI**, but cause no defeat or penalty.
+6. The **hangman figure is cosmetic**: drawn only at game over, for the losing player.
+
+### Rationale
+
+- Matches the original game design intent: a race to solve, not a survival contest.
+- Rewarding correct guesses with continued turns makes skill (good letter choices) directly pay off and keeps rounds fast.
+- Removing elimination keeps both players in the game to the end — no dead time playing out a lost position.
+
+### Trade-offs
+
+- **Stronger first-turn advantage:** a player on a hot streak can solve the entire word in one turn. Accepted; the random first turn and word choice (picking hard words) are the counterweights. Revisit after play-testing if needed.
+- Losing the hangman tension during play: the figure no longer looms as a threat. It returns as the loss visual, keeping the theme.
+- `MAX_WRONG_GUESSES` removed from shared constants; `BoardView.maxWrongGuesses` removed; `GameOverReason` narrowed to `word_solved | opponent_forfeit`. Done before any gameplay logic existed, so no migration cost.
 
 ---

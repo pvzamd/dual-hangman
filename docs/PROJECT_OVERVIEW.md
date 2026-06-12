@@ -2,7 +2,7 @@
 
 ## Description
 
-Dual Hangman is a real-time two-player browser game where players guess each other's secret words. Each player sets a word at the start of the round; they then take alternating turns guessing letters, racing to solve the other's word before being hanged.
+Dual Hangman is a real-time two-player browser game where players guess each other's secret words. Each player sets a word at the start of the round; players then take turns guessing letters — a correct guess earns another guess, a wrong one passes the turn — racing to be first to fully reveal the other's word. Wrong guesses carry no penalty; the hangman figure appears only as the loser's defeat visual (ADR-009).
 
 ## Project Goals
 

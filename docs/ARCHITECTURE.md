@@ -29,7 +29,7 @@ npm workspaces with three packages:
 dual-hangman/
 ├── shared/                  @dual-hangman/shared — types only, no build step
 │   └── src/
-│       ├── constants.ts     ← MAX_WRONG_GUESSES, word length limits, room code charset
+│       ├── constants.ts     ← word length limits, room code charset, reconnect grace
 │       ├── types.ts         ← GameView, BoardView, PlayerInfo, RoomPhase, ErrorCode
 │       ├── events.ts        ← ClientToServerEvents / ServerToClientEvents contract
 │       └── index.ts
@@ -102,17 +102,21 @@ A room is destroyed when: both players leave, the waiting host disconnects past 
 
 ## Turn Model
 
-Alternating turns (ADR-004). The first turn is assigned randomly when the round starts. The active player guesses exactly one letter; the turn then passes to the opponent **regardless of whether the guess was correct**. The server rejects out-of-turn guesses with `NOT_YOUR_TURN` and repeat guesses with `ALREADY_GUESSED`.
+Turn-based with streaks (ADR-004, revised by ADR-009). The first turn is assigned randomly when the round starts. The active player guesses one letter:
+
+- **Correct** → the player keeps the turn and guesses again immediately (`turn_changed` is NOT emitted).
+- **Wrong** → recorded for statistics only, and the turn passes to the opponent (`turn_changed` emitted).
+
+The server rejects out-of-turn guesses with `NOT_YOUR_TURN` and repeat guesses with `ALREADY_GUESSED` (a rejected repeat does not end the turn).
 
 ## Win Conditions
 
-Evaluated server-side after every guess, in this order:
+Evaluated server-side after every guess:
 
-1. **word_solved** — the guess revealed the last hidden letter of the opponent's word → guesser wins.
-2. **opponent_hanged** — the guesser's wrong-guess count reached `MAX_WRONG_GUESSES` (6) → opponent wins.
-3. **opponent_forfeit** — a player leaves or fails to reconnect within the grace period → remaining player wins.
+1. **word_solved** — the guess revealed the last hidden letter of the opponent's word → guesser wins. **This is the only gameplay win condition.**
+2. **opponent_forfeit** — a player leaves or fails to reconnect within the grace period → remaining player wins.
 
-Turn-based play makes a draw impossible: only one player acts at a time, so one of the conditions above always resolves first.
+There is **no loss by wrong guesses** (ADR-009): `wrongGuesses` in `BoardView` is statistics/UI data, and the hangman figure is a cosmetic visual drawn only for the loser at game over. A draw remains impossible — letters never repeat against the same word, so every turn permanently consumes at least one of 26 letters until someone's word is fully revealed.
 
 ## Socket Event Contract
 

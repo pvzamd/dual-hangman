@@ -3,13 +3,13 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 3)
+> Last updated: 2026-06-13 (end of Session 4)
 
 ---
 
 ## What This Project Is
 
-A real-time two-player browser hangman game: each player sets a secret word, then they alternate turns guessing letters of each other's word. First to solve wins; six wrong guesses and you're hanged. Production-quality hobby project by Parvez Ahmed.
+A real-time two-player browser word-guessing game: each player sets a secret word, then players take turns guessing letters of each other's word — a correct guess lets you keep guessing, a wrong one passes the turn. **The only way to win is to fully reveal the opponent's word first**; wrong guesses are tracked for stats but carry no penalty (ADR-009). The hangman figure is a cosmetic loss visual. Production-quality hobby project by Parvez Ahmed.
 
 **GitHub:** https://github.com/pvzamd/dual-hangman
 
@@ -43,7 +43,7 @@ Full details in `docs/ARCHITECTURE.md`. Key invariant: **the server is authorita
 ```
 shared/src/events.ts        ← typed socket contract (compile-time truth)
 shared/src/types.ts         ← GameView / BoardView / PlayerInfo / ErrorCode
-shared/src/constants.ts     ← MAX_WRONG_GUESSES, word limits, grace period
+shared/src/constants.ts     ← word limits, room code charset, grace period
 client/src/socket.ts        ← typed client singleton (autoConnect: false)
 client/src/pages/           ← HomePage, CreateRoomPage, JoinRoomPage, LobbyPage
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health
@@ -91,7 +91,7 @@ Then Phase 3 (word setup) → Phase 4 (gameplay). Full roadmap in `docs/ROADMAP.
 
 - TypeScript only; no plain JS in `src/` directories.
 - Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
-- Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: alternating, turn passes after every guess (ADR-004).
-- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-009).
+- Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: correct guess → guess again; wrong guess → turn passes; win by full reveal only (ADR-004 + ADR-009).
+- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-010).
 - Follow the mandatory documentation maintenance rules in `START_HERE.md` §8 — tick `docs/PROGRESS.md`, append to `docs/SESSION_NOTES.md`, and refresh this file before ending a session.
 - Never commit `.env`; keep `.env.example` files current.

@@ -11,8 +11,9 @@ export class GameManager {
   //   first turn) once both words are in.
   //
   // TODO Phase 4: guessLetter(playerId, letter) — reject out-of-turn and
-  //   repeat guesses, reveal letters or count a wrong guess, alternate the
-  //   turn, detect word_solved / opponent_hanged.
+  //   repeat guesses. Correct guess: reveal letters, same player guesses
+  //   again. Wrong guess: record for stats, pass the turn. Win detection:
+  //   word_solved only (no loss by wrong guesses — ADR-009).
   //
   // TODO Phase 4: buildViewFor(playerId) — project authoritative state into
   //   a GameView that hides the opponent's unsolved word.

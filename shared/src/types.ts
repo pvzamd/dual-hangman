@@ -19,10 +19,8 @@ export type RoomPhase =
   | 'game_over';
 
 export type GameOverReason =
-  /** Winner revealed every letter of the opponent's word. */
+  /** Winner revealed every letter of the opponent's word — the only gameplay win. */
   | 'word_solved'
-  /** Loser reached MAX_WRONG_GUESSES. */
-  | 'opponent_hanged'
   /** Opponent left or failed to reconnect within the grace period. */
   | 'opponent_forfeit';
 
@@ -34,14 +32,15 @@ export interface PlayerInfo {
 }
 
 /**
- * One hangman board: a player's progress guessing one secret word.
+ * One board: a player's progress guessing one secret word.
  * `maskedWord` hides unrevealed letters as null, e.g. ['H', null, null, 'L', 'O'].
+ * `wrongGuesses` is statistics/UI only — wrong guesses carry no gameplay
+ * penalty and cannot cause defeat (ADR-009).
  */
 export interface BoardView {
   maskedWord: (string | null)[];
   guessedLetters: string[];
   wrongGuesses: number;
-  maxWrongGuesses: number;
   solved: boolean;
 }
 

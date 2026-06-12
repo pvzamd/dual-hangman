@@ -76,3 +76,28 @@ Begin **Phase 2 — Lobby System**: implement `RoomManager.joinRoom`, wire `crea
 Unchanged from Session 2: begin **Phase 2 — Lobby System** (PROGRESS.md checklist). New sessions should start from `START_HERE.md`.
 
 ---
+
+## Session 4 — 2026-06-13
+
+### Work Completed
+
+- **Rules revision (ADR-009)** — aligned GAME_RULES.md with the original game design:
+  - Correct guess grants another immediate guess; wrong guess ends the turn.
+  - 6-wrong-guess loss condition removed; `opponent_hanged` removed as a game-over reason.
+  - Winning is **only** by fully revealing the opponent's word (forfeit remains as non-gameplay outcome).
+  - Hangman figure is now cosmetic — drawn only at game over for the loser.
+  - Wrong guesses still tracked (`BoardView.wrongGuesses`) for statistics/UI; no penalty.
+- Shared contract updated to match (no logic existed, so zero migration cost): `GameOverReason` narrowed to `word_solved | opponent_forfeit`; `MAX_WRONG_GUESSES` constant and `BoardView.maxWrongGuesses` removed; GameManager TODO comments updated.
+- Docs aligned: ARCHITECTURE (turn model with streaks, win conditions), ROADMAP + PROGRESS Phase 4/5 items (hangman figure moved to Phase 5 result screen), START_HERE, README, PROJECT_OVERVIEW, CLAUDE_CONTEXT; ADR-004 marked amended by ADR-009.
+- Verified: typecheck, lint, build all green after type changes.
+
+### Decisions Made This Session
+
+- ADR-009 (see DECISIONS.md). Noted trade-off: streak rule increases first-turn advantage — revisit after play-testing.
+- `turn_changed` is now emitted only on wrong guesses (correct guesses keep the turn).
+
+### Next Recommended Action
+
+Unchanged: begin **Phase 2 — Lobby System** (PROGRESS.md checklist). Phase 4 implementers: read ADR-009 before writing `GameManager.guessLetter`.
+
+---

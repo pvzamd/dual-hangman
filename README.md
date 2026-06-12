@@ -1,6 +1,6 @@
 # Dual Hangman
 
-A real-time two-player browser game: each player sets a secret word, then they take alternating turns guessing letters of each other's word. Solve theirs before you're hanged.
+A real-time two-player browser game: each player sets a secret word, then players take turns guessing letters of each other's word — guess right and you keep going, guess wrong and the turn passes. First to fully reveal the opponent's word wins.
 
 **Status:** Phase 1 complete — workspace scaffolded with a typed socket contract and skeleton pages/server. Gameplay logic starts in Phase 2 (lobby system).
 
@@ -12,8 +12,8 @@ A real-time two-player browser game: each player sets a secret word, then they t
 
 1. Two players join the same room using a shared room code.
 2. Each player secretly types a word (3–12 letters).
-3. Players alternate turns guessing one letter at a time — both boards update live.
-4. Reveal the opponent's whole word to win; six wrong guesses and you're hanged.
+3. Players take turns guessing letters — a correct guess earns another guess, a wrong one passes the turn. Both boards update live.
+4. First to reveal the opponent's whole word wins. Wrong guesses cost nothing but the turn — the hangman drawing is saved for the loser's defeat screen.
 
 Full rules: [docs/GAME_RULES.md](docs/GAME_RULES.md)
 

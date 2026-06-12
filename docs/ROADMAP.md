@@ -39,16 +39,18 @@
 
 ## Phase 4 — Core Gameplay
 
-- [ ] Server: `GameManager.guessLetter` — turn enforcement, reveal/wrong-guess, win detection
-- [ ] Server: emit `guess_result`, `turn_changed`, `game_won`
+- [ ] Server: `GameManager.guessLetter` — turn enforcement; correct guess = same player continues, wrong guess = turn passes (ADR-009)
+- [ ] Server: win detection — `word_solved` only (no loss by wrong guesses)
+- [ ] Server: emit `guess_result`, `turn_changed` (only on wrong guesses), `game_won`
 - [ ] Server: `GameManager.buildViewFor` — per-player `GameView` projection
 - [ ] Client: `useGame` hook owning socket subscription + `GameView`
-- [ ] Client: hangman SVG figure, word display, on-screen keyboard (guessed letters disabled)
+- [ ] Client: word display, on-screen keyboard (guessed letters disabled), wrong-guess stats counter
 - [ ] Client: both boards update live; clear your-turn / their-turn indicator
 
 ## Phase 5 — Game Over & Restart
 
-- [ ] Client: result screen (winner, reason, revealed words)
+- [ ] Client: result screen (winner, reason, revealed words, wrong-guess stats)
+- [ ] Client: hangman figure as the loser's defeat visual (cosmetic — ADR-009)
 - [ ] Rematch flow back to `word_setup`
 
 ## Phase 6 — Polish & Resilience

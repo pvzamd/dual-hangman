@@ -1,5 +1,5 @@
-/** Wrong guesses before a player is hanged: head, body, 2 arms, 2 legs. */
-export const MAX_WRONG_GUESSES = 6;
+// Wrong guesses carry no gameplay penalty (ADR-009) — there is deliberately
+// no MAX_WRONG_GUESSES constant. The hangman figure is a cosmetic loss visual.
 
 export const MIN_WORD_LENGTH = 3;
 export const MAX_WORD_LENGTH = 12;
