@@ -1,17 +1,17 @@
 # Dual Hangman
 
-A real-time two-player browser game where both players simultaneously guess each other's secret words.
+A real-time two-player browser game: each player sets a secret word, then they take alternating turns guessing letters of each other's word. Solve theirs before you're hanged.
 
-**Status:** Phase 0 complete — repository foundation established. No gameplay code yet.
+**Status:** Phase 1 complete — workspace scaffolded with a typed socket contract and skeleton pages/server. Gameplay logic starts in Phase 2 (lobby system).
 
 ---
 
 ## How It Works
 
 1. Two players join the same room using a shared room code.
-2. Each player secretly types a word.
-3. Both players guess letters simultaneously, racing to reveal the other's word.
-4. First to solve the opponent's word (or whoever exhausts fewer wrong guesses) wins.
+2. Each player secretly types a word (3–12 letters).
+3. Players alternate turns guessing one letter at a time — both boards update live.
+4. Reveal the opponent's whole word to win; six wrong guesses and you're hanged.
 
 Full rules: [docs/GAME_RULES.md](docs/GAME_RULES.md)
 
@@ -21,7 +21,7 @@ Full rules: [docs/GAME_RULES.md](docs/GAME_RULES.md)
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js **22.12+** (developed on Node 24 LTS — `nvm use 24`)
 - npm 10+
 
 ### Setup
@@ -29,13 +29,20 @@ Full rules: [docs/GAME_RULES.md](docs/GAME_RULES.md)
 ```bash
 git clone https://github.com/pvzamd/dual-hangman.git
 cd dual-hangman
-npm install          # installs all workspace dependencies
-npm run dev          # starts client (port 5173) + server (port 3001) concurrently
+npm install          # installs all three workspaces
+npm run dev          # client on :5173 + server on :3001, concurrently
 ```
 
-Open `http://localhost:5173` in two browser tabs (or two different browsers) to play locally.
+Open `http://localhost:5173` in two browser tabs (or two browsers) to play locally once gameplay lands.
 
-> **Note:** `npm run dev` and the workspace `package.json` files are set up in Phase 1. The above will work once scaffolding is complete.
+### Other commands
+
+```bash
+npm run build        # production builds (client → dist, server → single ESM file)
+npm run lint         # ESLint across all workspaces
+npm run typecheck    # tsc across all workspaces
+npm run format       # Prettier
+```
 
 ---
 
@@ -43,12 +50,14 @@ Open `http://localhost:5173` in two browser tabs (or two different browsers) to 
 
 ```
 dual-hangman/
-├── client/           # React 18 + TypeScript + Vite frontend
-│   ├── public/       # static assets
-│   └── src/          # app source
-├── server/           # Node.js + Express + Socket.IO backend
-│   └── src/          # server source
-├── docs/             # project documentation
+├── shared/           # @dual-hangman/shared — game types + typed socket contract
+│   └── src/          # constants.ts, types.ts, events.ts
+├── client/           # React 19 + TypeScript + Vite + Tailwind 4 frontend
+│   ├── public/
+│   └── src/          # pages/, socket.ts, App.tsx
+├── server/           # Node + Express 5 + Socket.IO backend
+│   └── src/          # index.ts, socket/, rooms/, game/
+├── docs/             # project documentation (see below)
 └── CLAUDE_CONTEXT.md # fast-load context for AI-assisted development
 ```
 
@@ -56,25 +65,25 @@ dual-hangman/
 
 ## Documentation
 
-| File | Purpose |
-|---|---|
-| [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) | Goals, tech choices, status |
-| [docs/GAME_RULES.md](docs/GAME_RULES.md) | Source of truth for game rules |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, component map, socket protocol |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Planned phases and future features |
-| [docs/PROGRESS.md](docs/PROGRESS.md) | Checkbox progress tracker |
-| [docs/SESSION_NOTES.md](docs/SESSION_NOTES.md) | Development log by session |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Architectural decision records |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Hosting and environment variable guide |
-| [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md) | AI session continuity context |
+| File                                                 | Purpose                                           |
+| ---------------------------------------------------- | ------------------------------------------------- |
+| [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) | Goals, tech choices, status                       |
+| [docs/GAME_RULES.md](docs/GAME_RULES.md)             | Source of truth for game rules                    |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)         | System design, socket contract, models, lifecycle |
+| [docs/ROADMAP.md](docs/ROADMAP.md)                   | Planned phases and future features                |
+| [docs/PROGRESS.md](docs/PROGRESS.md)                 | Checkbox progress tracker                         |
+| [docs/SESSION_NOTES.md](docs/SESSION_NOTES.md)       | Development log by session                        |
+| [docs/DECISIONS.md](docs/DECISIONS.md)               | Architectural decision records (ADRs)             |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)             | Hosting and environment variable guide            |
+| [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md)               | AI session continuity context                     |
 
 ---
 
 ## Tech Stack
 
-- **Frontend:** React 18, TypeScript, Vite
-- **Backend:** Node.js, Express, Socket.IO, TypeScript
-- **Realtime:** WebSocket via Socket.IO
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4, react-router 7
+- **Backend:** Node.js, Express 5, Socket.IO 4, TypeScript (tsx dev / tsup build)
+- **Shared:** `@dual-hangman/shared` — one strongly typed Socket.IO event contract for both sides
 
 ---
 

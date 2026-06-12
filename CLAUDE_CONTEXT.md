@@ -2,13 +2,13 @@
 
 > This file is the fast-load context for any new Claude session.
 > Read this first. Update it at the end of every session.
-> Last updated: 2026-06-13
+> Last updated: 2026-06-13 (end of Session 2)
 
 ---
 
 ## What This Project Is
 
-A real-time two-player browser hangman game. Both players simultaneously try to guess each other's secret word. Built as a production-quality hobby project by Parvez Ahmed.
+A real-time two-player browser hangman game: each player sets a secret word, then they alternate turns guessing letters of each other's word. First to solve wins; six wrong guesses and you're hanged. Production-quality hobby project by Parvez Ahmed.
 
 **GitHub:** https://github.com/pvzamd/dual-hangman
 
@@ -16,101 +16,81 @@ A real-time two-player browser hangman game. Both players simultaneously try to 
 
 ## Current Phase
 
-**Phase 0 — Repository Foundation (COMPLETE)**
+**Phase 1 — Project Scaffolding (COMPLETE)**
 
-The skeleton is in place. No gameplay code exists. Next step is Phase 1: scaffolding (Vite + React client, Node + Express + Socket.IO server).
+The three-package workspace builds, lints, typechecks, and the server smoke-tests clean. All socket handlers are registered but return `NOT_IMPLEMENTED`. **Next: Phase 2 — Lobby System** (see PROGRESS.md for the checklist).
 
 ---
 
 ## Active Architecture
 
-| Layer | Tech |
-|---|---|
-| Frontend | React 18 + TypeScript + Vite |
-| Backend | Node.js + Express + Socket.IO + TypeScript |
-| State (runtime) | In-memory (no DB at MVP) |
-| Monorepo | npm workspaces |
+| Layer        | Tech                                                           |
+| ------------ | -------------------------------------------------------------- |
+| Frontend     | React 19 + TypeScript + Vite + Tailwind CSS 4 + react-router 7 |
+| Backend      | Node ≥ 22.12 + Express 5 + Socket.IO 4 + TypeScript            |
+| Shared types | `@dual-hangman/shared` — source-only pkg, the socket contract  |
+| Dev          | `npm run dev` at root → `tsx watch` (server) + Vite (client)   |
+| Build        | Vite (client) / tsup single-file ESM bundle (server)           |
+| State        | In-memory on server, no DB (ADR-002)                           |
 
-Full details in `docs/ARCHITECTURE.md`.
+Full details in `docs/ARCHITECTURE.md`. Key invariant: **the server is authoritative; the opponent's unsolved word never reaches a client.**
 
 ---
 
-## Folder Structure
+## Repo Map (the parts that matter)
 
 ```
-dual-hangman/
-├── client/
-│   ├── public/          ← static assets
-│   └── src/             ← React app (empty at Phase 0)
-├── server/
-│   └── src/             ← Node server (empty at Phase 0)
-├── docs/
-│   ├── PROJECT_OVERVIEW.md
-│   ├── GAME_RULES.md
-│   ├── ARCHITECTURE.md
-│   ├── ROADMAP.md
-│   ├── PROGRESS.md
-│   ├── SESSION_NOTES.md
-│   ├── DECISIONS.md
-│   └── DEPLOYMENT.md
-├── CLAUDE.md            ← auto-loaded by Claude Code; points here
-├── CLAUDE_CONTEXT.md    ← you are here
-├── README.md
-├── .gitignore
-├── .gitattributes
-└── LICENSE
+shared/src/events.ts        ← typed socket contract (compile-time truth)
+shared/src/types.ts         ← GameView / BoardView / PlayerInfo / ErrorCode
+shared/src/constants.ts     ← MAX_WRONG_GUESSES, word limits, grace period
+client/src/socket.ts        ← typed client singleton (autoConnect: false)
+client/src/pages/           ← HomePage, CreateRoomPage, JoinRoomPage, LobbyPage
+server/src/index.ts         ← Express + Socket.IO bootstrap, /health
+server/src/socket/registerSocketHandlers.ts  ← all handlers (stubs)
+server/src/rooms/RoomManager.ts              ← room map + ServerPlayer (skeleton)
+server/src/game/GameManager.ts               ← rules engine (skeleton)
 ```
 
 ---
 
-## Outstanding Tasks
-
-- [ ] Phase 1: Initialise Vite + React client (`client/`)
-- [ ] Phase 1: Initialise Node + Express + Socket.IO server (`server/`)
-- [ ] Phase 1: Root `package.json` workspaces + concurrent dev script
-- [ ] Phase 1: tsconfig for both packages
-- [ ] Phase 1: ESLint + Prettier
-- [ ] Phase 2: Lobby system (room create/join)
-- [ ] Phase 3: Word setup
-- [ ] Phase 4: Core gameplay loop
-- [ ] Phase 5: Game over + restart
-
-Full roadmap in `docs/ROADMAP.md`. Fine-grained checkboxes in `docs/PROGRESS.md`.
-
----
-
-## Known Issues / Open Questions
-
-- **ADR-004 unresolved:** Simultaneous vs turn-based guessing not decided. Must be settled before Phase 4. See `docs/DECISIONS.md`.
-- No test infrastructure set up yet (deferred to Phase 1).
-
----
-
-## Key Conventions to Follow
-
-- TypeScript everywhere — no plain JS files in `client/src/` or `server/src/`.
-- Shared event names and payload types live in a `shared/` package or `server/src/socket/events.ts` (exported for client import).
-- `.env` files are never committed. Use `.env.example` as a template.
-- Update `docs/PROGRESS.md` when completing any task.
-- Update `docs/SESSION_NOTES.md` with a new entry at the end of each session.
-- Update this file (`CLAUDE_CONTEXT.md`) whenever the current phase or outstanding tasks change.
-
----
-
-## Next Recommended Step
+## Commands
 
 ```bash
-# 1. Scaffold the client
-cd client
-npm create vite@latest . -- --template react-ts
-
-# 2. Scaffold the server
-cd ../server
-npm init -y
-npm install express socket.io cors
-npm install -D typescript tsx @types/node @types/express @types/cors
-
-# 3. Set up root package.json with workspaces + concurrently dev script
+npm run dev          # client :5173 + server :3001 concurrently
+npm run build        # vite build + tsup
+npm run lint         # eslint, all workspaces
+npm run typecheck    # tsc, all workspaces
+npm run format       # prettier
 ```
 
-After scaffolding, verify both run with `npm run dev` from the root before moving to Phase 2.
+---
+
+## Outstanding Tasks (Phase 2 — Lobby System)
+
+- [ ] `RoomManager.joinRoom` (capacity + phase validation)
+- [ ] Wire `create_room` / `join_room` / `leave_room` handlers (replace NOT_IMPLEMENTED stubs)
+- [ ] Client: connect socket, wire Create/Join pages, Lobby reacts to `opponent_joined`
+- [ ] Persist `{ roomCode, playerId, reconnectToken }` to localStorage
+- [ ] Start Vitest with RoomManager unit tests
+
+Then Phase 3 (word setup) → Phase 4 (gameplay). Full roadmap in `docs/ROADMAP.md`.
+
+---
+
+## Known Issues / Gotchas
+
+- **Use `npm.cmd`, not `npm`**, when running shell commands from Claude Code on this machine (bare `npm` trips a harness bug).
+- Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
+- No tests exist yet — start them with Phase 2 server logic.
+- `alert()` placeholders in Create/Join pages are intentional Phase-2 TODOs.
+
+---
+
+## Key Conventions
+
+- TypeScript only; no plain JS in `src/` directories.
+- Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
+- Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: alternating, turn passes after every guess (ADR-004).
+- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-009).
+- Tick `docs/PROGRESS.md` when finishing tasks; append to `docs/SESSION_NOTES.md` and refresh this file before ending a session.
+- Never commit `.env`; keep `.env.example` files current.

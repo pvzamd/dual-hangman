@@ -2,80 +2,86 @@
 
 ## Overview
 
-Dual Hangman requires two deployed components:
+Dual Hangman deploys as two components:
 
-1. **Server** — Node.js process serving both the Socket.IO WebSocket endpoint and (optionally) the static client build.
-2. **Client** — Static React build. Can be served by the Node server or a separate CDN/hosting service.
+1. **Server** — single-file Node bundle (`server/dist/index.js`) serving the Socket.IO endpoint + `/health`.
+2. **Client** — static Vite build (`client/dist/`) for any static host/CDN.
+
+Runtime requirement: **Node ≥ 22.12** (see ADR-008).
 
 ## Environment Variables
 
-### Server
+### Server (`server/.env.example`)
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `PORT` | No | `3001` | Port the Express server listens on |
-| `CLIENT_ORIGIN` | Yes (prod) | — | CORS allowed origin (e.g. `https://dual-hangman.vercel.app`) |
-| `NODE_ENV` | No | `development` | Set to `production` in prod |
+| Variable        | Required   | Default                 | Description                                                  |
+| --------------- | ---------- | ----------------------- | ------------------------------------------------------------ |
+| `PORT`          | No         | `3001`                  | Port the Express/Socket.IO server listens on                 |
+| `CLIENT_ORIGIN` | Yes (prod) | `http://localhost:5173` | CORS allowed origin (e.g. `https://dual-hangman.vercel.app`) |
 
-### Client
+### Client (`client/.env.example`)
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
+| Variable          | Required   | Default                 | Description          |
+| ----------------- | ---------- | ----------------------- | -------------------- |
 | `VITE_SERVER_URL` | Yes (prod) | `http://localhost:3001` | Socket.IO server URL |
 
-Create a `.env.example` in each package directory. Never commit real `.env` files.
+`.env.example` files live in each package. Never commit real `.env` files (gitignored).
 
 ## Local Development
 
 ```bash
-# From repo root
+# From repo root — requires Node 22.12+ (nvm use 24)
 npm install
-npm run dev      # starts both client (port 5173) and server (port 3001) concurrently
+npm run dev      # client :5173 + server :3001 concurrently
 ```
 
 ## Production Build
 
 ```bash
-npm run build    # builds client to client/dist and compiles server TypeScript
+npm run build
+# → client/dist/          static site (Vite)
+# → server/dist/index.js  single ESM file, shared types bundled in (tsup)
+```
+
+Run the server with:
+
+```bash
+node server/dist/index.js
 ```
 
 ## Hosting Options
 
 ### Option A — Unified (server serves static client)
 
-Deploy the Node server to **Railway** or **Render**. Build the client and copy `client/dist` to a location Express serves statically.
+Deploy the Node server to **Railway** or **Render** and add an `express.static(client/dist)` handler (small change in `server/src/index.ts` when we get there).
 
-Pros: single deployment, no CORS config needed.  
-Cons: server handles static file traffic.
+Pros: single deployment, no CORS config. Cons: server handles static traffic.
 
-### Option B — Split (recommended for scaling)
+### Option B — Split (recommended)
 
-- Deploy server to **Railway** / **Render** / **Fly.io**.
-- Deploy client build to **Vercel** or **Netlify**.
-- Configure `CLIENT_ORIGIN` on the server and `VITE_SERVER_URL` on the client build.
+- Server → **Railway** / **Render** / **Fly.io**
+- Client → **Vercel** or **Netlify**
+- Set `CLIENT_ORIGIN` on the server and `VITE_SERVER_URL` at client build time.
 
-### Railway (recommended for server)
+### Railway (server)
 
-1. Connect GitHub repo.
-2. Set root directory to `server/`.
-3. Set build command: `npm run build`.
-4. Set start command: `node dist/index.js`.
-5. Add environment variables via Railway dashboard.
+1. Connect GitHub repo; root directory: repo root (workspaces need the root lockfile).
+2. Build command: `npm install && npm run build -w server`
+3. Start command: `node server/dist/index.js`
+4. Set `CLIENT_ORIGIN`; Railway injects `PORT` automatically.
 
-### Vercel (recommended for client)
+### Vercel (client)
 
-1. Connect GitHub repo.
-2. Set root directory to `client/`.
-3. Framework preset: Vite.
-4. Add `VITE_SERVER_URL` environment variable.
+1. Connect GitHub repo; root directory: `client/`.
+2. Framework preset: Vite (build runs `tsc && vite build`).
+3. Set `VITE_SERVER_URL` to the deployed server URL.
 
-## WebSocket on Hosting Platforms
+## WebSocket Notes
 
-Most modern platforms support WebSocket. Confirm the plan/tier supports persistent connections:
-- Railway: supported on all plans.
-- Render: supported; free tier may spin down after inactivity (causes connection delay on first load).
+- Railway: WebSocket supported on all plans.
+- Render: supported; free tier spins down after inactivity → first connection is slow.
 - Fly.io: supported.
+- In-memory state (ADR-002) means **one server instance only** — do not autoscale horizontally without first adding a shared store (Redis).
 
 ## Health Check
 
-The server exposes `GET /health` returning `{ status: "ok" }` — use this for platform health checks / uptime monitoring.
+`GET /health` → `{ "status": "ok" }` — wired up and smoke-tested; use it for platform health checks and uptime monitoring.

@@ -2,7 +2,7 @@
 
 ## Description
 
-Dual Hangman is a real-time two-player browser game where both players simultaneously guess each other's secret words. Each player sets a word at the start of the round; both then race to solve the other's word before exhausting their allowed wrong guesses.
+Dual Hangman is a real-time two-player browser game where players guess each other's secret words. Each player sets a word at the start of the round; they then take alternating turns guessing letters, racing to solve the other's word before being hanged.
 
 ## Project Goals
 
@@ -13,20 +13,24 @@ Dual Hangman is a real-time two-player browser game where both players simultane
 
 ## Technology Choices
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Frontend | React 18 + TypeScript | Component model suits game UI; type safety reduces bugs |
-| Bundler | Vite | Fast dev server, clean ESM output |
-| Backend | Node.js + Express | Familiar ecosystem, non-blocking I/O suits sockets |
-| Realtime | Socket.IO | Abstracts WebSocket fallback; room model fits game lobbies |
-| Styling | CSS Modules or Tailwind | TBD at implementation phase |
-| Testing | Vitest (client) + Jest (server) | Native Vite integration; standard Jest for Node |
-| Hosting | TBD (see DEPLOYMENT.md) | Likely Railway or Render for server; Vercel/Netlify for client |
+| Layer        | Choice                                         | Reason                                                         |
+| ------------ | ---------------------------------------------- | -------------------------------------------------------------- |
+| Frontend     | React 19 + TypeScript + Vite                   | Component model suits game UI; type safety reduces bugs        |
+| Styling      | Tailwind CSS 4 (`@tailwindcss/vite`)           | Zero-config utilities; styling lives with components (ADR-005) |
+| Routing      | react-router-dom 7                             | Standard SPA routing                                           |
+| Backend      | Node.js (≥22.12) + Express 5                   | Familiar ecosystem, non-blocking I/O suits sockets (ADR-008)   |
+| Realtime     | Socket.IO 4                                    | WebSocket with fallback; room model fits game lobbies          |
+| Shared types | `@dual-hangman/shared` source-only pkg         | One compile-time socket contract for both sides (ADR-006)      |
+| Dev workflow | `tsx watch` (server), Vite (client)            | Instant restarts/HMR; `concurrently` runs both from root       |
+| Build        | Vite (client), tsup (server)                   | Single-file ESM server bundle including shared types           |
+| Lint/format  | ESLint 10 (flat config) + Prettier             | Consistent style across all three packages                     |
+| Testing      | Vitest (client) + node test or Vitest (server) | To be set up when first logic lands (Phase 2+)                 |
+| Hosting      | TBD (see DEPLOYMENT.md)                        | Likely Railway/Render for server; Vercel/Netlify for client    |
 
 ## Current Status
 
-**Phase 0 — Repository Foundation (complete)**
+**Phase 1 — Project Scaffolding (complete)**
 
-Repository skeleton, documentation system, and folder structure established. No gameplay code exists yet.
+Three-package npm workspace is scaffolded, building, linting, and smoke-tested: typed socket contract in `shared/`, React app with home/create/join/lobby skeleton pages, Express + Socket.IO server with `/health` and skeleton handlers. **No gameplay logic yet** — next is Phase 2 (lobby system).
 
 See [ROADMAP.md](ROADMAP.md) for upcoming phases and [PROGRESS.md](PROGRESS.md) for fine-grained task tracking.
