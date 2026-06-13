@@ -1,6 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { ROOM_CODE_LENGTH } from '@dual-hangman/shared';
+import { GameManager } from '../game/GameManager.js';
 import { RoomManager } from './RoomManager.js';
+
+/** A room driven into the `playing` phase with a live game, as the handler does. */
+function playingRoom() {
+  const manager = new RoomManager();
+  const room = manager.createRoom('Alice');
+  const join = manager.joinRoom(room.code, 'Bob');
+  if (!join.ok) throw new Error('join failed');
+  const host = room.players[0];
+  const joiner = join.player;
+  host.secretWord = 'PUZZLE';
+  joiner.secretWord = 'BOOK';
+  room.game = new GameManager(
+    { playerId: host.id, secretWord: host.secretWord },
+    { playerId: joiner.id, secretWord: joiner.secretWord },
+  );
+  room.phase = 'playing';
+  return { manager, room, host, joiner };
+}
 
 describe('RoomManager', () => {
   describe('createRoom', () => {
@@ -114,6 +133,58 @@ describe('RoomManager', () => {
       expect(manager.validateReconnect(room.code, host.id, 'bad-token')).toBeNull();
       expect(manager.validateReconnect(room.code, 'bad-id', host.reconnectToken)).toBeNull();
       expect(manager.validateReconnect('ZZZZZ', host.id, host.reconnectToken)).toBeNull();
+    });
+  });
+
+  describe('forfeit', () => {
+    it('during playing, the opponent wins by opponent_forfeit and the room ends in game_over', () => {
+      const { manager, room, host, joiner } = playingRoom();
+
+      const result = manager.forfeit(room.code, host.id);
+
+      expect(result).not.toBeNull();
+      if (!result) return;
+      expect(result.winner.id).toBe(joiner.id);
+      expect(result.forfeiterId).toBe(host.id);
+      expect(room.phase).toBe('game_over');
+      expect(room.game?.winnerId).toBe(joiner.id);
+      expect(room.game?.gameOverReason).toBe('opponent_forfeit');
+    });
+
+    it('keeps both players (forfeiter marked disconnected) and does not destroy the room', () => {
+      const { manager, room, host } = playingRoom();
+
+      manager.forfeit(room.code, host.id);
+
+      expect(room.players).toHaveLength(2); // winner's view still renders both boards
+      expect(host.connected).toBe(false);
+      expect(host.socketId).toBeNull();
+      expect(manager.getRoom(room.code)).toBe(room);
+    });
+
+    it('forfeits whoever leaves — the player on turn or the player waiting', () => {
+      const { manager, room } = playingRoom();
+      const active = room.game!.activePlayerId;
+      const expectedWinner = room.players.find((p) => p.id !== active)!.id;
+
+      const result = manager.forfeit(room.code, active);
+      expect(result?.winner.id).toBe(expectedWinner);
+    });
+
+    it('returns null outside the playing phase (waiting / word_setup)', () => {
+      const manager = new RoomManager();
+      const room = manager.createRoom('Alice');
+      expect(manager.forfeit(room.code, room.players[0].id)).toBeNull(); // waiting_for_opponent
+
+      manager.joinRoom(room.code, 'Bob');
+      expect(room.phase).toBe('word_setup');
+      expect(manager.forfeit(room.code, room.players[0].id)).toBeNull();
+    });
+
+    it('returns null for an unknown room or player', () => {
+      const { manager, room } = playingRoom();
+      expect(manager.forfeit('ZZZZZ', room.players[0].id)).toBeNull();
+      expect(manager.forfeit(room.code, 'not-a-player')).toBeNull();
     });
   });
 });

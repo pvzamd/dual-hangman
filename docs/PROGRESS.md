@@ -79,7 +79,16 @@
 - [x] Tests: comprehensive GameManager/roomView gameplay coverage (38 total)
 - [x] Live smoke test: streaks, wrong-guess turn pass, repeat/out-of-turn/invalid rejections, win, mid-game reconnect
 
-> Deferred to later phases by design: hangman defeat figure + rematch (Phase 5); in-game forfeit on leave/grace-expiry (Phase 6).
+> Deferred to later phases by design: hangman defeat figure + rematch (Phase 5).
+
+## Forfeit (correctness fix, post-Phase 4) ✅
+
+- [x] `GameManager.forfeit(playerId)` — opponent wins by `opponent_forfeit`; no-op if already decided
+- [x] `RoomManager.forfeit(code, playerId)` — playing-phase only; ends in `game_over`, keeps both players (forfeiter marked disconnected) so the winner's view renders
+- [x] `handleExit` routes `leave_room` and grace-timer expiry: forfeit during `playing`, else the lobby revert/destroy behavior (unchanged)
+- [x] `RECONNECT_GRACE_SECONDS` env override (for tuning + tests)
+- [x] GameBoard shows a forfeit-specific game-over banner
+- [x] Tests: GameManager.forfeit + RoomManager.forfeit (playing → forfeit; non-playing → null); live smoke test of both leave-during-play and grace-expiry-during-play
 
 ## Phase 5 — Game Over & Restart
 

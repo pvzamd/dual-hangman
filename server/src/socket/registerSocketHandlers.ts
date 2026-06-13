@@ -17,6 +17,10 @@ const JOIN_FAILURE_MESSAGES: Record<string, string> = {
   INVALID_PHASE: 'That room is not accepting players right now.',
 };
 
+// Grace window before a disconnected player forfeits. Overridable via env
+// (handy for tuning and for tests that can't wait the full default).
+const GRACE_SECONDS = Number(process.env.RECONNECT_GRACE_SECONDS) || RECONNECT_GRACE_SECONDS;
+
 /**
  * Registers every event from the shared contract for one connection.
  * Lobby (Phase 2), word setup (Phase 3), and guessing (Phase 4) are live;
@@ -75,7 +79,7 @@ export function registerSocketHandlers(
     socket.leave(roomCode);
     socket.data.roomCode = undefined;
     socket.data.playerId = undefined;
-    removeAndNotify(io, roomManager, roomCode, playerId);
+    handleExit(io, roomManager, roomCode, playerId);
   });
 
   socket.on('reconnect_player', ({ roomCode, playerId, reconnectToken }) => {
@@ -110,10 +114,10 @@ export function registerSocketHandlers(
     console.log(`[socket] player ${player.name} disconnected from ${roomCode} (${reason})`);
     player.connected = false;
     player.socketId = null;
-    socket.to(roomCode).emit('opponent_disconnected', { graceSeconds: RECONNECT_GRACE_SECONDS });
-    roomManager.startGraceTimer(roomCode, playerId, RECONNECT_GRACE_SECONDS, () => {
-      // TODO Phase 4: during `playing`, grace expiry must forfeit instead.
-      removeAndNotify(io, roomManager, roomCode, playerId);
+    socket.to(roomCode).emit('opponent_disconnected', { graceSeconds: GRACE_SECONDS });
+    roomManager.startGraceTimer(roomCode, playerId, GRACE_SECONDS, () => {
+      // Grace expired: forfeit if a round is in progress, else revert/destroy.
+      handleExit(io, roomManager, roomCode, playerId);
     });
   });
 
@@ -232,6 +236,35 @@ function bindSocket(
   socket.data.roomCode = roomCode;
   socket.data.playerId = playerId;
   socket.join(roomCode);
+}
+
+/**
+ * A player leaving the room — explicitly (leave_room) or by grace-timer
+ * expiry. During `playing` this is a forfeit: the opponent wins immediately.
+ * In any other phase it keeps the lobby behavior (revert to waiting / destroy).
+ */
+function handleExit(
+  io: GameServer,
+  roomManager: RoomManager,
+  roomCode: string,
+  playerId: string,
+): void {
+  const room = roomManager.getRoom(roomCode);
+  if (!room) return;
+
+  if (room.phase === 'playing') {
+    const result = roomManager.forfeit(roomCode, playerId);
+    if (result && result.winner.socketId) {
+      io.to(result.winner.socketId).emit('game_won', {
+        winnerId: result.winner.id,
+        reason: 'opponent_forfeit',
+        state: buildRoomView(result.room, result.winner.id),
+      });
+    }
+    return;
+  }
+
+  removeAndNotify(io, roomManager, roomCode, playerId);
 }
 
 /** Removes the player and resyncs whoever is left in the room. */

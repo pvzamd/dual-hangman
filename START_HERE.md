@@ -15,13 +15,13 @@ Dual Hangman is a real-time two-player browser game. Each player sets a secret w
 
 ## 2. Current Status
 
-|                     |                                                                                                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Completed**       | Phases 0–4: foundation, scaffolding + typed contract, lobby (incl. basic reconnection), word setup, core gameplay                                                        |
-| **Current phase**   | **Phase 5 — Game Over & Restart** (not started)                                                                                                                          |
-| **Next task**       | Polish the game-over result screen, add the hangman defeat figure (cosmetic), and a rematch flow back to `word_setup`; checklist in [docs/PROGRESS.md](docs/PROGRESS.md) |
-| **Working**         | A full round end-to-end: rooms, word setup, turn-based guessing (streaks, turn transfer, win-by-reveal), live board + keyboard, basic game-over screen; 38 unit tests    |
-| **Not working yet** | Rematch, hangman defeat figure, in-game forfeit on leave/disconnect (Phase 6), chat                                                                                      |
+|                     |                                                                                                                                                                                                          |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Completed**       | Phases 0–4: foundation, scaffolding + typed contract, lobby (incl. basic reconnection), word setup, core gameplay                                                                                        |
+| **Current phase**   | **Phase 5 — Game Over & Restart** (not started)                                                                                                                                                          |
+| **Next task**       | Polish the game-over result screen, add the hangman defeat figure (cosmetic), and a rematch flow back to `word_setup`; checklist in [docs/PROGRESS.md](docs/PROGRESS.md)                                 |
+| **Working**         | A full round end-to-end: rooms, word setup, turn-based guessing (streaks, turn transfer, win-by-reveal), live board + keyboard, game-over screen, forfeit on leave/disconnect during play; 46 unit tests |
+| **Not working yet** | Rematch, hangman defeat figure, idle room sweep, chat                                                                                                                                                    |
 
 > Keep this table phase-accurate. Fine-grained, always-current state lives in [docs/PROGRESS.md](docs/PROGRESS.md) and [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md).
 

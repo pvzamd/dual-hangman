@@ -175,3 +175,27 @@ Leaving or disconnecting past grace **during `playing`** still reverts the room 
 Begin **Phase 5 — Game Over & Restart**: polish the result screen, add the cosmetic hangman defeat figure for the loser (ADR-009), and a rematch flow back to `word_setup` (new `rematch` event + GameManager reset). `GameBoard` already renders a basic game-over state to build on.
 
 ---
+
+## Session 8 — 2026-06-13
+
+### Work Completed
+
+- **Closed the in-game forfeit correctness gap** (implements ADR-007's "grace → forfeit" + ADR-009's `opponent_forfeit` win; no new ADR needed). Scope was strictly the forfeit fix — no Phase 5 work.
+- `GameManager.forfeit(playerId)`: the opponent wins by `opponent_forfeit`; no-op if the round is already decided (a late leave can't flip a win).
+- `RoomManager.forfeit(code, playerId)`: valid only during `playing` (returns null otherwise). Cancels the grace timer, sets `game_over`, and keeps the forfeiter in `players` marked disconnected so the winner's `GameView` still renders both boards. The room is **not** destroyed.
+- Socket handler: new `handleExit` routes both `leave_room` and grace-timer expiry — forfeit during `playing` (emit `game_won`/`opponent_forfeit` to the remaining player), otherwise the existing revert/destroy (`removeAndNotify`). Lobby-phase behavior is unchanged.
+- `RECONNECT_GRACE_SECONDS` is now env-overridable (default 60) — useful for tuning and for tests that can't wait the full window. Documented in `server/.env.example` and DEPLOYMENT.md.
+- Client: `GameBoard` banner is reason-aware ("You win — {opponent} left the game." on a forfeit win).
+- Tests up to 46 (+8): `GameManager.forfeit` (opponent wins, regardless of turn, no overwrite of a decided game) and `RoomManager.forfeit` (playing → forfeit with both players kept + room intact; null in waiting/word_setup; null for unknown room/player).
+- Live smoke test (server run with a 2s grace) covered **both** required scenarios plus the negative case: (A) explicit `leave_room` during play → opponent wins immediately by forfeit; (B) disconnect + grace expiry during play → opponent wins after ~2s; (C) leaving during `word_setup` → opponent gets `state_sync` back to `waiting_for_opponent`, no `game_won` (lobby behavior preserved).
+
+### Decisions / Notes
+
+- Kept the forfeiter in `room.players` (disconnected) rather than removing them, so the winner's board view renders without special-casing a missing opponent. The lingering room is reclaimed by the Phase 6 idle sweep.
+- No new ADR: this realizes decisions already recorded in ADR-007 and ADR-009.
+
+### Next Recommended Action
+
+Unchanged: begin **Phase 5 — Game Over & Restart** (result screen polish, hangman defeat figure, rematch). The forfeit win path already produces a correct `game_over` state for the result screen to build on.
+
+---

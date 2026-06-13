@@ -143,8 +143,16 @@ export class GameManager {
     return { ok: true, letter, correct: false, solved: false, turnPassed: true };
   }
 
-  // TODO Phase 6: forfeit(playerId) for leave/grace-expiry during play
-  //   (game_won with opponent_forfeit). Lobby-level leave is handled today.
+  /**
+   * Ends the round by forfeit — the OTHER player wins. Used when a player
+   * leaves or fails to reconnect within the grace period during `playing`.
+   * No-op if the game is already decided, so a late leave can't flip a result.
+   */
+  forfeit(playerId: PlayerId): void {
+    if (this.winner !== null) return;
+    this.winner = this.opponentOf(playerId);
+    this.overReason = 'opponent_forfeit';
+  }
 
   private seat(playerId: PlayerId): Seat {
     const seat = this.seats.find((s) => s.playerId === playerId);

@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 7)
+> Last updated: 2026-06-13 (end of Session 8)
 
 ---
 
@@ -19,7 +19,7 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 **Phase 4 — Core Gameplay (COMPLETE)**
 
-A full round is playable end-to-end. `GameManager.guessLetter` enforces all rules (ADR-009): correct guess reveals every occurrence and keeps the turn (streak); wrong guess counts for stats only and passes the turn; repeats/out-of-turn/invalid are rejected without touching state; win is `word_solved` only. The server emits personalized `guess_result` / `game_won` and `turn_changed` (wrong guesses only); `game_won` reveals each player's own target word. Client: `useGame` hook + `GamePage`/`GameBoard`/`WordDisplay`/`GuessedLetters`/`Keyboard`; LobbyPage navigates to `/game/:roomCode` on `playing`. 38 Vitest tests; full round smoke-tested over real sockets. `chat_message` remains a stub. **Next: Phase 5 — Game Over & Restart** (result screen, hangman defeat figure, rematch).
+A full round is playable end-to-end. `GameManager.guessLetter` enforces all rules (ADR-009): correct guess reveals every occurrence and keeps the turn (streak); wrong guess counts for stats only and passes the turn; repeats/out-of-turn/invalid are rejected without touching state; win is `word_solved` only. The server emits personalized `guess_result` / `game_won` and `turn_changed` (wrong guesses only); `game_won` reveals each player's own target word. Client: `useGame` hook + `GamePage`/`GameBoard`/`WordDisplay`/`GuessedLetters`/`Keyboard`; LobbyPage navigates to `/game/:roomCode` on `playing`. Leaving or disconnecting past the grace window **during `playing` now forfeits** — the opponent wins via `game_won` (`opponent_forfeit`); lobby-phase exits keep the revert/destroy behavior. 46 Vitest tests; full round + both forfeit paths smoke-tested over real sockets. `chat_message` remains a stub. **Next: Phase 5 — Game Over & Restart** (result screen, hangman defeat figure, rematch).
 
 ---
 
@@ -52,10 +52,10 @@ client/src/pages/           ← Home, Create, Join, Lobby, Game — all wired
 client/src/components/       ← WordSetupForm, GameBoard, WordDisplay, GuessedLetters, Keyboard
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health
 server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
-server/src/socket/registerSocketHandlers.ts  ← lobby + word + guess handlers live; chat stub
-server/src/rooms/RoomManager.ts              ← rooms, join/leave, reconnect, grace timers
+server/src/socket/registerSocketHandlers.ts  ← lobby + word + guess + forfeit handlers; chat stub
+server/src/rooms/RoomManager.ts              ← rooms, join/leave/forfeit, reconnect, grace timers
 server/src/rooms/roomView.ts                 ← Room → GameView projection (delegates to game)
-server/src/game/GameManager.ts               ← round state + guessLetter (turn rules, win detection)
+server/src/game/GameManager.ts               ← round state + guessLetter + forfeit (rules, win detection)
 ```
 
 ---
@@ -78,7 +78,7 @@ npm run format       # prettier
 - [ ] Hangman defeat figure as the loser's visual (cosmetic — ADR-009)
 - [ ] Rematch flow back to `word_setup` (needs a new `rematch` event + GameManager reset)
 
-Deferred to Phase 6: forfeit on leave/grace-expiry during `playing` (TODOs in RoomManager + the disconnect handler), idle room sweep, chat. Full roadmap in `docs/ROADMAP.md`.
+Deferred to Phase 6: idle room sweep, chat. (In-game forfeit on leave/grace-expiry is now done — see below.) Full roadmap in `docs/ROADMAP.md`.
 
 ---
 
@@ -86,9 +86,9 @@ Deferred to Phase 6: forfeit on leave/grace-expiry during `playing` (TODOs in Ro
 
 - Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
 - Claude Code harness quirks (npm.cmd etc.) live in `CLAUDE.md`.
-- Tests: server only so far (`npm run test` → 38 Vitest tests). No client tests yet.
-- **Known gap (Phase 6):** leaving or disconnecting past grace during `playing` reverts the room instead of forfeiting — WRONG per the rules. TODOs sit in `RoomManager.leaveRoom` and the `disconnect` handler. Lobby-phase leave/reconnect is correct.
-- `GameBoard` already renders a basic game-over state (winner + revealed word); the polished result screen, hangman figure, and rematch are Phase 5.
+- Tests: server only so far (`npm run test` → 46 Vitest tests). No client tests yet.
+- In-game forfeit is wired through `handleExit` in the socket handler: `leave_room` and grace-timer expiry both forfeit during `playing` (opponent wins), and keep the revert/destroy behavior otherwise. Grace window is env-overridable (`RECONNECT_GRACE_SECONDS`, default 60).
+- `GameBoard` renders a game-over state (winner, reason-aware banner, revealed word); the polished result screen, hangman figure, and rematch are Phase 5.
 
 ---
 

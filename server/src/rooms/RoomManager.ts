@@ -40,6 +40,12 @@ export type LeaveResult =
   | { destroyed: true }
   | { destroyed: false; room: Room; remaining: ServerPlayer };
 
+export interface ForfeitResult {
+  room: Room;
+  winner: ServerPlayer;
+  forfeiterId: PlayerId;
+}
+
 /**
  * Owns the in-memory map of active rooms and the reconnection grace timers.
  * No database: rooms die with the process (ADR-002). All methods are
@@ -101,6 +107,31 @@ export class RoomManager {
     room.game = null;
     room.lastActivityAt = Date.now();
     return { destroyed: false, room, remaining };
+  }
+
+  /**
+   * Ends an in-progress round because a player left or timed out: the other
+   * player wins by forfeit. Only valid during `playing` (returns null
+   * otherwise, so lobby-phase exits keep their revert/destroy behavior).
+   * The forfeiter stays in `players` — marked disconnected — so the winner's
+   * GameView still renders both boards; the room transitions to `game_over`.
+   */
+  forfeit(code: string, playerId: PlayerId): ForfeitResult | null {
+    const room = this.getRoom(code);
+    if (!room || !room.game || room.phase !== 'playing') return null;
+    const forfeiter = room.players.find((p) => p.id === playerId);
+    if (!forfeiter) return null;
+
+    this.cancelGraceTimer(code, playerId);
+    room.game.forfeit(playerId);
+    room.phase = 'game_over';
+    forfeiter.connected = false;
+    forfeiter.socketId = null;
+    room.lastActivityAt = Date.now();
+
+    const winner = room.players.find((p) => p.id === room.game!.winnerId);
+    if (!winner) return null; // unreachable: the winner is the other seated player
+    return { room, winner, forfeiterId: playerId };
   }
 
   validateReconnect(

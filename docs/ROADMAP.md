@@ -57,7 +57,7 @@
 
 ## Phase 6 — Polish & Resilience
 
-- [ ] In-game reconnection: grace expiry during `playing` → forfeit via `game_won` (ADR-007; lobby-level reconnection shipped in Phase 2)
+- [x] In-game forfeit: leaving or grace-expiry during `playing` → opponent wins via `game_won` (`opponent_forfeit`) — shipped as a post-Phase-4 correctness fix (ADR-007)
 - [ ] Idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`)
 - [ ] Chat sidebar (`chat_message`)
 - [ ] Animations (letter reveal, hangman draw)

@@ -34,10 +34,15 @@ export default function GameBoard({
   const yourTurn = phase === 'playing' && activePlayerId === you.id;
   const youWon = over && view.winnerId === you.id;
 
+  const byForfeit = view.gameOverReason === 'opponent_forfeit';
   const banner = over
     ? youWon
-      ? 'You win! 🎉 You revealed their word first.'
-      : `${opponentName} revealed your word first.`
+      ? byForfeit
+        ? `You win — ${opponentName} left the game.`
+        : 'You win! 🎉 You revealed their word first.'
+      : byForfeit
+        ? 'Game over — you left the game.'
+        : `${opponentName} revealed your word first.`
     : opponentAway
       ? `${opponentName} disconnected — ${graceSeconds}s to reconnect…`
       : yourTurn

@@ -246,3 +246,32 @@ describe('GameManager.guessLetter — rejections', () => {
     expect(game.guessLetter(first, wrongA)).toEqual({ ok: false, error: 'ALREADY_GUESSED' });
   });
 });
+
+describe('GameManager.forfeit', () => {
+  it('awards the win to the opponent with reason opponent_forfeit', () => {
+    const game = newGame();
+    game.forfeit(ALICE);
+    expect(game.winnerId).toBe(BOB);
+    expect(game.gameOverReason).toBe('opponent_forfeit');
+    expect(game.isOver).toBe(true);
+  });
+
+  it('works regardless of whose turn it is', () => {
+    const game = newGame();
+    const active = game.activePlayerId;
+    game.forfeit(active); // the player on turn bails
+    expect(game.winnerId).toBe(otherOf(active));
+    expect(game.gameOverReason).toBe('opponent_forfeit');
+  });
+
+  it('does not overwrite an already-decided win', () => {
+    const game = newGame();
+    const winner = game.activePlayerId;
+    for (const letter of uniqueLetters(targetOf(winner))) game.guessLetter(winner, letter);
+    expect(game.gameOverReason).toBe('word_solved');
+
+    game.forfeit(winner); // a late bail must not flip the result
+    expect(game.winnerId).toBe(winner);
+    expect(game.gameOverReason).toBe('word_solved');
+  });
+});
