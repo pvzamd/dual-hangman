@@ -143,7 +143,7 @@ Tailwind CSS v4 via the first-party `@tailwindcss/vite` plugin; a single `@impor
 ## ADR-007 — Reconnection via Token + Grace Period
 
 **Date:** 2026-06-13  
-**Status:** Accepted (implementation lands Phase 6)
+**Status:** Accepted (lobby-level reconnection landed in Phase 2; in-game forfeit-on-grace-expiry in the post-Phase-4 fix)
 
 ### Decision
 

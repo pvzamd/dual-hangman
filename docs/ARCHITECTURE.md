@@ -1,6 +1,6 @@
 # Architecture
 
-> Phases 1–4 implemented (scaffolding → lobby → word setup → core gameplay). The socket contract here mirrors `shared/src/events.ts` — that file is the compile-time truth; keep this document in sync with it.
+> Phases 1–7 implemented (scaffolding → lobby → word setup → core gameplay → game over + rematch → polish & resilience → scoring). The socket contract here mirrors `shared/src/events.ts` — that file is the compile-time truth; keep this document in sync with it.
 
 ## High-Level Overview
 

@@ -336,3 +336,25 @@ Phase 6 is fully done. Next is **Phase 7 — Scoring & Multi-Round** (decide whe
 The game is feature-complete through Phase 7. Options: more real-device playtesting (`docs/LOCAL_PLAYTESTING.md`), a deployment pass (`docs/DEPLOYMENT.md`), or a Nice-to-Have from `docs/ROADMAP.md` (dictionary validation, spectator mode, PWA, simultaneous race mode).
 
 ---
+
+## Session 15 — 2026-06-13
+
+### Work Completed
+
+- **Full pre-deploy project review** (no code, no gameplay, no deployment). Read all server/client/shared source, all docs, all 14 ADRs; searched for TODO/FIXME/HACK/NOT_IMPLEMENTED/@ts-ignore/any.
+- Produced three review docs at the repo root: **`RELEASE_READINESS.md`** (assessment + findings + doc audit), **`MUST_FIX_BEFORE_DEPLOY.md`** (public-deploy blockers), **`NICE_TO_HAVE_AFTER_DEPLOY.md`** (post-launch backlog).
+- **Fixed three stale documentation spots found during the review** (docs only): ARCHITECTURE header "Phases 1–4" → "1–7"; PROJECT_OVERVIEW status "Phase 4 (complete), 38 tests" → feature-complete through Phase 7, 64 tests; ADR-007 status "implementation lands Phase 6" → reflects Phase 2 + post-Phase-4.
+- Added the three review docs to the START_HERE documentation index.
+
+### Key findings (summary; details in RELEASE_READINESS.md)
+
+- **No code debt markers**, no leftover stubs; 64 tests + typecheck/lint/build all green.
+- **Must-fix before public deploy** (config + one safeguard, not features): set `CLIENT_ORIGIN` (CORS), set `VITE_SERVER_URL`/TLS for the client (wss), pin to a single instance (in-memory state), and guard unauthenticated room creation (DoS).
+- **Known limitations (by design, ADR-002):** in-memory only, single-instance, no accounts/persistence, honor-system content.
+- **Nice-to-have:** rate limiting, graceful shutdown, structured logging, client/handler tests, remove the dead `NOT_IMPLEMENTED` enum member, dictionary/profanity validation, accessibility.
+
+### Next Recommended Action
+
+If deploying: work through `MUST_FIX_BEFORE_DEPLOY.md`, then deploy per `docs/DEPLOYMENT.md`. Otherwise the game is complete for LAN/friends play; pick from `NICE_TO_HAVE_AFTER_DEPLOY.md` as desired.
+
+---
