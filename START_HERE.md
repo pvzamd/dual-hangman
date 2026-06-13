@@ -15,13 +15,13 @@ Dual Hangman is a real-time two-player browser game. Each player sets a secret w
 
 ## 2. Current Status
 
-|                     |                                                                                                                                                                                                          |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Completed**       | Phases 0–4: foundation, scaffolding + typed contract, lobby (incl. basic reconnection), word setup, core gameplay                                                                                        |
-| **Current phase**   | **Phase 5 — Game Over & Restart** (not started)                                                                                                                                                          |
-| **Next task**       | Polish the game-over result screen, add the hangman defeat figure (cosmetic), and a rematch flow back to `word_setup`; checklist in [docs/PROGRESS.md](docs/PROGRESS.md)                                 |
-| **Working**         | A full round end-to-end: rooms, word setup, turn-based guessing (streaks, turn transfer, win-by-reveal), live board + keyboard, game-over screen, forfeit on leave/disconnect during play; 46 unit tests |
-| **Not working yet** | Rematch, hangman defeat figure, idle room sweep, chat                                                                                                                                                    |
+|                     |                                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Completed**       | Phases 0–5: foundation, scaffolding + typed contract, lobby (incl. reconnection), word setup, core gameplay, game over + rematch                                                                             |
+| **Current phase**   | **Phase 6 — Polish & Resilience** (not started)                                                                                                                                                              |
+| **Next task**       | Idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`), chat sidebar, animations, responsive layout; checklist in [docs/PROGRESS.md](docs/PROGRESS.md)                                                                |
+| **Working**         | A full game loop end-to-end: rooms, word setup, turn-based guessing (streaks, turn transfer, win-by-reveal), forfeit, game-over screen with both words + defeat figure, mutual-opt-in rematch; 51 unit tests |
+| **Not working yet** | Idle room sweep, chat, animations beyond basic, scoring (Phase 7)                                                                                                                                            |
 
 > Keep this table phase-accurate. Fine-grained, always-current state lives in [docs/PROGRESS.md](docs/PROGRESS.md) and [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md).
 
@@ -69,6 +69,7 @@ Full rationale and trade-offs in [docs/DECISIONS.md](docs/DECISIONS.md).
 | 009 | **Win by full reveal only** — correct guess continues the turn, wrong guess passes it; no loss by wrong guesses; hangman figure is the cosmetic loss visual |
 | 010 | Lobby sync = `reconnect_player` → `state_sync` on every connect; leaving a two-player lobby reverts the room to waiting instead of destroying it            |
 | 011 | Dedicated `/game` route + shared `useGame` hook with phase-driven navigation; `game_won` reveals each player's own target word                              |
+| 012 | Rematch is mutual opt-in (reuses the word_setup flow); declining = leaving; both secret words revealed at game over                                         |
 
 ---
 

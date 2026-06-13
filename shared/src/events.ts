@@ -111,6 +111,8 @@ export interface ClientToServerEvents {
   guess_letter: (payload: GuessLetterPayload) => void;
   reconnect_player: (payload: ReconnectPlayerPayload) => void;
   leave_room: () => void;
+  /** After game_over, ask to play again with the same opponent (mutual opt-in). */
+  request_rematch: () => void;
   chat_message: (payload: ChatMessagePayload) => void;
 }
 
@@ -126,6 +128,12 @@ export interface ServerToClientEvents {
   guess_result: (payload: GuessResultPayload) => void;
   turn_changed: (payload: TurnChangedPayload) => void;
   game_won: (payload: GameWonPayload) => void;
+  /** The opponent has requested a rematch (this client may accept by requesting too). */
+  rematch_requested: () => void;
+  /** Both players opted in — a fresh round begins; state is back in word_setup. */
+  rematch_started: (payload: StateSyncPayload) => void;
+  /** Rematch can't proceed (opponent left); the room reverts to the lobby via state_sync. */
+  rematch_unavailable: () => void;
   opponent_disconnected: (payload: OpponentDisconnectedPayload) => void;
   opponent_reconnected: () => void;
   /** Full resync — sent after reconnection and on any phase transition. */

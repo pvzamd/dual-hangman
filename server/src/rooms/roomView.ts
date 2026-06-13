@@ -28,8 +28,9 @@ export function buildRoomView(room: Room, playerId: PlayerId): GameView {
     activePlayerId: game ? game.activePlayerId : null,
     winnerId: game ? game.winnerId : null,
     gameOverReason: game ? game.gameOverReason : null,
-    // At game over, reveal the word THIS player was guessing (their target) —
-    // the loser finally sees the word they could not finish.
-    opponentWordRevealed: game && room.phase === 'game_over' ? game.targetWordFor(you.id) : null,
+    // At game over both secret words are revealed: your own word (which the
+    // opponent was guessing) and the opponent's word (which you were guessing).
+    yourWordRevealed: room.phase === 'game_over' ? you.secretWord : null,
+    opponentWordRevealed: room.phase === 'game_over' ? (opponent?.secretWord ?? null) : null,
   };
 }

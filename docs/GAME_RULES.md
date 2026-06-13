@@ -32,6 +32,14 @@ Two players compete head-to-head. Each player secretly chooses a word; they then
 - Wrong guesses are **counted for statistics and UI only** (e.g. accuracy display, post-game summary). They never cause defeat.
 - The hangman figure is purely **cosmetic**: it is drawn only at game over, displayed for the **losing** player as the defeat visual. No figure is shown or built up during play.
 
+## Game Over and Rematch
+
+- When the round ends, **both secret words are revealed** to both players — your own word and your opponent's word.
+- The loser sees the cosmetic hangman figure; the winner sees a victory message. A forfeit win is labelled as such ("your opponent left").
+- Either player may offer a **rematch**. It begins only when **both** players opt in (the same mutual-readiness model as word submission): the first to ask waits for the other to accept.
+- A rematch keeps the same room and players but starts a fresh round — secret words are cleared and re-entered, and the first turn is randomised again.
+- If a player declines by leaving, or the opponent is no longer available, the other player is returned to the lobby (the room reverts to waiting for an opponent).
+
 ## Valid Words
 
 - Letters only (A–Z, case-insensitive; stored and compared uppercase).

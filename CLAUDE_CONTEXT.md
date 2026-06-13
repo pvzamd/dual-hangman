@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 8)
+> Last updated: 2026-06-13 (end of Session 9)
 
 ---
 
@@ -17,9 +17,9 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 ## Current Phase
 
-**Phase 4 — Core Gameplay (COMPLETE)**
+**Phase 5 — Game Over & Restart (COMPLETE)**
 
-A full round is playable end-to-end. `GameManager.guessLetter` enforces all rules (ADR-009): correct guess reveals every occurrence and keeps the turn (streak); wrong guess counts for stats only and passes the turn; repeats/out-of-turn/invalid are rejected without touching state; win is `word_solved` only. The server emits personalized `guess_result` / `game_won` and `turn_changed` (wrong guesses only); `game_won` reveals each player's own target word. Client: `useGame` hook + `GamePage`/`GameBoard`/`WordDisplay`/`GuessedLetters`/`Keyboard`; LobbyPage navigates to `/game/:roomCode` on `playing`. Leaving or disconnecting past the grace window **during `playing` now forfeits** — the opponent wins via `game_won` (`opponent_forfeit`); lobby-phase exits keep the revert/destroy behavior. 46 Vitest tests; full round + both forfeit paths smoke-tested over real sockets. `chat_message` remains a stub. **Next: Phase 5 — Game Over & Restart** (result screen, hangman defeat figure, rematch).
+The full game loop works end-to-end (lobby → word setup → play → game over → rematch → repeat). At game over, both secret words are revealed (`yourWordRevealed` + `opponentWordRevealed`), the loser sees a cosmetic `HangmanFigure`, and a reason-aware banner covers win / loss / forfeit. **Rematch is mutual opt-in** (ADR-012): `request_rematch` → `rematch_requested` to the opponent → when both opt in, `RoomManager.resetForRematch` returns the room to `word_setup` and emits `rematch_started`. Declining = leaving (reverts to lobby); if the opponent is gone, `rematch_unavailable` reverts the requester to the lobby. Earlier phases intact: turn rules (ADR-009), forfeit on leave/disconnect during play. 51 Vitest tests; full rematch lifecycle smoke-tested over real sockets. `chat_message` remains a stub. **Next: Phase 6 — Polish & Resilience** (idle room sweep, chat, animations, responsive layout).
 
 ---
 
@@ -47,13 +47,13 @@ shared/src/constants.ts     ← word/name limits, room code charset, grace perio
 shared/src/words.ts         ← normalizeSecretWord (client + server validation)
 client/src/socket.ts        ← typed client singleton (autoConnect: false)
 client/src/lib/identity.ts  ← localStorage identity (save/load/clear)
-client/src/hooks/useGame.ts ← socket subscription + GameView (Lobby & Game pages)
+client/src/hooks/useGame.ts ← socket subscription + GameView + rematch state (Lobby & Game)
 client/src/pages/           ← Home, Create, Join, Lobby, Game — all wired
-client/src/components/       ← WordSetupForm, GameBoard, WordDisplay, GuessedLetters, Keyboard
+client/src/components/       ← WordSetupForm, GameBoard, WordDisplay, GuessedLetters, Keyboard, HangmanFigure
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health
 server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
-server/src/socket/registerSocketHandlers.ts  ← lobby + word + guess + forfeit handlers; chat stub
-server/src/rooms/RoomManager.ts              ← rooms, join/leave/forfeit, reconnect, grace timers
+server/src/socket/registerSocketHandlers.ts  ← lobby + word + guess + forfeit + rematch handlers; chat stub
+server/src/rooms/RoomManager.ts              ← rooms, join/leave/forfeit/rematch, reconnect, grace timers
 server/src/rooms/roomView.ts                 ← Room → GameView projection (delegates to game)
 server/src/game/GameManager.ts               ← round state + guessLetter + forfeit (rules, win detection)
 ```
@@ -72,13 +72,14 @@ npm run format       # prettier
 
 ---
 
-## Outstanding Tasks (Phase 5 — Game Over & Restart)
+## Outstanding Tasks (Phase 6 — Polish & Resilience)
 
-- [ ] Result screen polish (winner, reason, revealed words, wrong-guess stats) — basic game-over state already renders in `GameBoard`
-- [ ] Hangman defeat figure as the loser's visual (cosmetic — ADR-009)
-- [ ] Rematch flow back to `word_setup` (needs a new `rematch` event + GameManager reset)
+- [ ] Idle room sweep — reclaim rooms idle past `ROOM_IDLE_TIMEOUT_MINUTES` (uses `lastActivityAt`; also cleans up post-forfeit ghost rooms)
+- [ ] Chat sidebar (`chat_message` is still a NOT_IMPLEMENTED stub)
+- [ ] Animations (letter reveal, hangman draw) and responsive/mobile layout
+- [ ] Optional: sound effects
 
-Deferred to Phase 6: idle room sweep, chat. (In-game forfeit on leave/grace-expiry is now done — see below.) Full roadmap in `docs/ROADMAP.md`.
+Then Phase 7 (scoring / multi-round). Full roadmap in `docs/ROADMAP.md`.
 
 ---
 
@@ -86,9 +87,9 @@ Deferred to Phase 6: idle room sweep, chat. (In-game forfeit on leave/grace-expi
 
 - Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
 - Claude Code harness quirks (npm.cmd etc.) live in `CLAUDE.md`.
-- Tests: server only so far (`npm run test` → 46 Vitest tests). No client tests yet.
+- Tests: server only so far (`npm run test` → 51 Vitest tests). No client tests yet.
 - In-game forfeit is wired through `handleExit` in the socket handler: `leave_room` and grace-timer expiry both forfeit during `playing` (opponent wins), and keep the revert/destroy behavior otherwise. Grace window is env-overridable (`RECONNECT_GRACE_SECONDS`, default 60).
-- `GameBoard` renders a game-over state (winner, reason-aware banner, revealed word); the polished result screen, hangman figure, and rematch are Phase 5.
+- Rematch reuses `word_setup` (no new phase). After a forfeit, the disconnected forfeiter is kept in the room → a lingering "ghost" room until the winner leaves or the (Phase 6) idle sweep reclaims it.
 
 ---
 
@@ -97,6 +98,6 @@ Deferred to Phase 6: idle room sweep, chat. (In-game forfeit on leave/grace-expi
 - TypeScript only; no plain JS in `src/` directories.
 - Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
 - Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: correct guess → guess again; wrong guess → turn passes; win by full reveal only (ADR-004 + ADR-009).
-- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-012).
+- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-013).
 - Follow the mandatory documentation maintenance rules in `START_HERE.md` §8 — tick `docs/PROGRESS.md`, append to `docs/SESSION_NOTES.md`, and refresh this file before ending a session.
 - Never commit `.env`; keep `.env.example` files current.

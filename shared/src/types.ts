@@ -64,7 +64,8 @@ export interface GameView {
   activePlayerId: PlayerId | null;
   winnerId: PlayerId | null;
   gameOverReason: GameOverReason | null;
-  /** Revealed only at game_over so the loser sees the unsolved word. */
+  /** Both secret words, revealed only at game_over (null while playing). */
+  yourWordRevealed: string | null;
   opponentWordRevealed: string | null;
 }
 

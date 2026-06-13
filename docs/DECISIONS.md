@@ -250,3 +250,29 @@ Node 18 (previous dev machine default) is end-of-life and below the minimum for 
 - Revealing the word at game over is arguably Phase 5 (result screen) territory, but the data belongs in `game_won`'s state and costs nothing. The polished result screen, hangman defeat figure, and rematch remain Phase 5.
 
 ---
+
+## ADR-012 — Rematch as Mutual Opt-In; Reveal Both Words at Game Over
+
+**Date:** 2026-06-13 (Phase 5)  
+**Status:** Accepted
+
+### Decision
+
+1. A rematch requires **both** players to opt in — the same mutual-readiness model as word submission. `request_rematch` sets a per-player `wantsRematch` flag; the first to ask notifies the opponent (`rematch_requested`) and waits; when both have asked, the room is reset to `word_setup` and both get `rematch_started`.
+2. A rematch **reuses the existing room and the word-setup flow** rather than introducing a new phase: `resetForRematch` clears words/flags/game and sets phase `word_setup`, so the entire Phase 3 path (and a fresh random first turn) is reused unchanged.
+3. **Declining is leaving.** There is no separate "decline" event: a player who doesn't want a rematch leaves (`leave_room`), which reverts the room to `waiting_for_opponent` and returns the other player to the lobby via `state_sync`.
+4. If a player requests a rematch when the opponent has already gone, the server replies `rematch_unavailable` and reverts the requester to the lobby (removing the absent opponent).
+5. At `game_over`, **both** secret words are revealed to each player (`yourWordRevealed` + `opponentWordRevealed`), sourced from `ServerPlayer.secretWord`.
+
+### Rationale
+
+- Mutual opt-in avoids yanking a player into a new round they didn't agree to, and mirrors a model already proven in word setup — minimal new concepts.
+- Reusing `word_setup` keeps the state machine small: no bespoke "rematch" phase, and the client's existing lobby/word-setup screens handle the new round for free.
+- Folding "decline" into "leave" avoids a near-duplicate event; the lobby-revert behavior already produces the desired "return to lobby" outcome.
+
+### Trade-offs
+
+- A rematch always re-collects secret words (no "same words again" shortcut). Intentional — re-using words would leak information.
+- The loser of a forfeit can't be offered a rematch (they're gone); the winner simply returns to the lobby. Acceptable.
+
+---

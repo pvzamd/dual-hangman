@@ -21,6 +21,16 @@ function playingRoom() {
   return { manager, room, host, joiner };
 }
 
+/** A finished room (both players present, normal word_solved win). */
+function gameOverRoom() {
+  const ctx = playingRoom();
+  const winner = ctx.room.game!.activePlayerId;
+  const target = ctx.room.game!.targetWordFor(winner);
+  for (const letter of new Set(target.split(''))) ctx.room.game!.guessLetter(winner, letter);
+  ctx.room.phase = 'game_over';
+  return ctx;
+}
+
 describe('RoomManager', () => {
   describe('createRoom', () => {
     it('creates a waiting room with one connected host', () => {
@@ -185,6 +195,71 @@ describe('RoomManager', () => {
       const { manager, room } = playingRoom();
       expect(manager.forfeit('ZZZZZ', room.players[0].id)).toBeNull();
       expect(manager.forfeit(room.code, 'not-a-player')).toBeNull();
+    });
+  });
+
+  describe('requestRematch', () => {
+    it('a single request records the opt-in and waits for the opponent', () => {
+      const { manager, room, host, joiner } = gameOverRoom();
+
+      const outcome = manager.requestRematch(room.code, host.id);
+
+      expect(outcome.type).toBe('requested');
+      if (outcome.type !== 'requested') return;
+      expect(outcome.opponent.id).toBe(joiner.id);
+      expect(host.wantsRematch).toBe(true);
+      expect(room.phase).toBe('game_over'); // not reset until both opt in
+    });
+
+    it('when both opt in, the room resets to a fresh word_setup round', () => {
+      const { manager, room, host, joiner } = gameOverRoom();
+      host.secretWord = 'PUZZLE';
+      joiner.secretWord = 'BOOK';
+
+      manager.requestRematch(room.code, host.id);
+      const outcome = manager.requestRematch(room.code, joiner.id);
+
+      expect(outcome.type).toBe('started');
+      expect(room.phase).toBe('word_setup');
+      expect(room.game).toBeNull();
+      expect(room.players.every((p) => p.secretWord === null)).toBe(true);
+      expect(room.players.every((p) => p.wantsRematch === false)).toBe(true);
+      expect(room.players).toHaveLength(2);
+    });
+
+    it('is unavailable when the opponent has disconnected', () => {
+      const { manager, room, host, joiner } = gameOverRoom();
+      joiner.connected = false;
+
+      const outcome = manager.requestRematch(room.code, host.id);
+      expect(outcome.type).toBe('unavailable');
+      if (outcome.type !== 'unavailable') return;
+      expect(outcome.opponent.id).toBe(joiner.id);
+    });
+
+    it('is invalid outside game_over, or for an unknown player', () => {
+      const { manager, room, host } = playingRoom(); // still playing
+      expect(manager.requestRematch(room.code, host.id).type).toBe('invalid');
+
+      const over = gameOverRoom();
+      expect(over.manager.requestRematch(over.room.code, 'nobody').type).toBe('invalid');
+    });
+  });
+
+  describe('resetForRematch', () => {
+    it('clears words, flags, and the game, returning to word_setup', () => {
+      const { manager, room, host, joiner } = gameOverRoom();
+      host.wantsRematch = true;
+      joiner.wantsRematch = true;
+
+      manager.resetForRematch(room);
+
+      expect(room.phase).toBe('word_setup');
+      expect(room.game).toBeNull();
+      expect(host.secretWord).toBeNull();
+      expect(joiner.secretWord).toBeNull();
+      expect(host.wantsRematch).toBe(false);
+      expect(joiner.wantsRematch).toBe(false);
     });
   });
 });

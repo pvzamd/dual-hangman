@@ -19,6 +19,8 @@ export interface ServerPlayer {
   reconnectToken: string;
   connected: boolean;
   secretWord: string | null;
+  /** Set at game_over when this player opts into a rematch (cleared on reset). */
+  wantsRematch: boolean;
 }
 
 export interface Room {
@@ -45,6 +47,16 @@ export interface ForfeitResult {
   winner: ServerPlayer;
   forfeiterId: PlayerId;
 }
+
+export type RematchOutcome =
+  /** Not in a state where a rematch can be requested. */
+  | { type: 'invalid' }
+  /** This player opted in; the opponent has been notified and must opt in too. */
+  | { type: 'requested'; opponent: ServerPlayer }
+  /** Both players opted in; the room has been reset to word_setup. */
+  | { type: 'started'; room: Room }
+  /** The opponent has left, so no rematch is possible. */
+  | { type: 'unavailable'; opponent: ServerPlayer };
 
 /**
  * Owns the in-memory map of active rooms and the reconnection grace timers.
@@ -82,10 +94,10 @@ export class RoomManager {
   }
 
   /**
-   * Removes a player (explicit leave or expired grace timer).
-   * Last player out destroys the room; otherwise the room reverts to
+   * Removes a player (explicit leave or expired grace timer) outside an active
+   * round. Last player out destroys the room; otherwise it reverts to
    * waiting_for_opponent so the remaining player can share the code again.
-   * TODO Phase 4: leaving mid-`playing` must forfeit (game_won) instead.
+   * (Leaving during `playing` is a forfeit — see `forfeit`, decided upstream.)
    */
   leaveRoom(code: string, playerId: PlayerId): LeaveResult | null {
     const room = this.getRoom(code);
@@ -104,6 +116,7 @@ export class RoomManager {
     const remaining = room.players[0];
     room.phase = 'waiting_for_opponent';
     remaining.secretWord = null;
+    remaining.wantsRematch = false;
     room.game = null;
     room.lastActivityAt = Date.now();
     return { destroyed: false, room, remaining };
@@ -132,6 +145,43 @@ export class RoomManager {
     const winner = room.players.find((p) => p.id === room.game!.winnerId);
     if (!winner) return null; // unreachable: the winner is the other seated player
     return { room, winner, forfeiterId: playerId };
+  }
+
+  /**
+   * Records a rematch opt-in after a finished game (mutual opt-in, like word
+   * submission). Both opted in → the room is reset to word_setup. Opponent
+   * absent → unavailable. Only valid at `game_over`.
+   */
+  requestRematch(code: string, playerId: PlayerId): RematchOutcome {
+    const room = this.getRoom(code);
+    if (!room || room.phase !== 'game_over') return { type: 'invalid' };
+    const player = room.players.find((p) => p.id === playerId);
+    if (!player) return { type: 'invalid' };
+
+    const opponent = room.players.find((p) => p.id !== playerId);
+    if (!opponent || !opponent.connected) {
+      return opponent ? { type: 'unavailable', opponent } : { type: 'invalid' };
+    }
+
+    player.wantsRematch = true;
+    room.lastActivityAt = Date.now();
+
+    if (opponent.wantsRematch) {
+      this.resetForRematch(room);
+      return { type: 'started', room };
+    }
+    return { type: 'requested', opponent };
+  }
+
+  /** Clears words/flags and returns the room to word_setup for a new round. */
+  resetForRematch(room: Room): void {
+    for (const player of room.players) {
+      player.secretWord = null;
+      player.wantsRematch = false;
+    }
+    room.game = null;
+    room.phase = 'word_setup';
+    room.lastActivityAt = Date.now();
   }
 
   validateReconnect(
@@ -212,6 +262,7 @@ function createPlayer(name: string): ServerPlayer {
     reconnectToken: randomBytes(24).toString('base64url'),
     connected: true,
     secretWord: null,
+    wantsRematch: false,
   };
 }
 

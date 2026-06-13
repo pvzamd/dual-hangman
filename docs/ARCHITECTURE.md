@@ -139,6 +139,7 @@ Compile-time truth: `shared/src/events.ts`. Both sides instantiate Socket.IO wit
 | `guess_letter`       | `{ letter }`                             | 4     |
 | `reconnect_player`   | `{ roomCode, playerId, reconnectToken }` | 6     |
 | `leave_room`         | —                                        | 2     |
+| `request_rematch`    | —                                        | 5     |
 | `chat_message`       | `{ text }`                               | 6     |
 
 ### Server → Client
@@ -153,7 +154,10 @@ Compile-time truth: `shared/src/events.ts`. Both sides instantiate Socket.IO wit
 | `game_started`          | `{ state }`                                        | Round begins; includes first turn                 |
 | `guess_result`          | `{ guesserId, letter, correct, state }`            | Outcome of a guess + full refreshed state         |
 | `turn_changed`          | `{ activePlayerId }`                               | Whose turn it is now                              |
-| `game_won`              | `{ winnerId, reason, state }`                      | Round over; state reveals the unsolved word       |
+| `game_won`              | `{ winnerId, reason, state }`                      | Round over; state reveals both words              |
+| `rematch_requested`     | —                                                  | Opponent offered a rematch                        |
+| `rematch_started`       | `{ state }`                                        | Both opted in; fresh round (state in word_setup)  |
+| `rematch_unavailable`   | —                                                  | Opponent left; reverting to lobby via state_sync  |
 | `opponent_disconnected` | `{ graceSeconds }`                                 | Grace timer started                               |
 | `opponent_reconnected`  | —                                                  | Opponent came back                                |
 | `state_sync`            | `{ state }`                                        | Full resync (after reconnect / phase transitions) |
@@ -167,7 +171,7 @@ Clients only ever receive `GameView` — a per-player projection built by `build
 - `yourWordReady` / `opponentWordReady` — word-setup ready flags, so a refresh during setup restores the right screen.
 - `yourBoard` — your progress guessing the **opponent's** word (`maskedWord` hides unrevealed letters as `null`).
 - `opponentBoard` — the opponent's progress guessing **your** word.
-- `activePlayerId`, `winnerId`, `gameOverReason`, and `opponentWordRevealed` (populated only at game over).
+- `activePlayerId`, `winnerId`, `gameOverReason`; and `yourWordRevealed` + `opponentWordRevealed` — **both** secret words, populated only at game over.
 
 ### Word setup flow (Phase 3)
 
@@ -181,10 +185,19 @@ Clients only ever receive `GameView` — a per-player projection built by `build
 1. Client emits `guess_letter { letter }`. The on-screen keyboard already disables guessed letters and disables itself off-turn, but the server is the authority.
 2. `GameManager.guessLetter` validates and applies the guess, returning a discriminated outcome. Rejections (`NOT_YOUR_TURN`, `ALREADY_GUESSED`, `INVALID_LETTER`, `INVALID_PHASE`) leave all state untouched and surface as `error_occurred`.
 3. **Correct:** every occurrence of the letter is revealed and the **same player keeps the turn** (streak). **Wrong:** `wrongGuesses` increments (stats only) and the turn passes.
-4. If the guess revealed the last hidden letter → `winnerId`/`word_solved` set, phase flips to `game_over`, and both players get a personalized `game_won` (whose state reveals each player's own target word via `opponentWordRevealed`).
+4. If the guess revealed the last hidden letter → `winnerId`/`word_solved` set, phase flips to `game_over`, and both players get a personalized `game_won` (whose state reveals **both** secret words via `yourWordRevealed` + `opponentWordRevealed`).
 5. Otherwise the server emits a personalized `guess_result` to each player, plus `turn_changed` to the room **only when the turn passed** (wrong guess). The client re-renders purely from the `state` in these payloads.
 
 **Anti-cheat invariant:** the opponent's unsolved word never appears in any payload. Guess validation, turn order, and win detection are exclusively server-side; the masked board exposes only revealed letters until game over.
+
+### Game over & rematch flow (Phase 5)
+
+At `game_over` the result screen shows the win/lose/forfeit banner, **both** revealed words, a cosmetic hangman figure for the loser, and rematch controls.
+
+1. A player emits `request_rematch`. `RoomManager.requestRematch` is valid only at `game_over` and uses the same mutual opt-in as word submission.
+2. First requester → the opponent gets `rematch_requested` (their button becomes "Accept rematch"); the requester waits.
+3. Both opted in → `resetForRematch` clears words/flags/game and sets phase `word_setup`; both clients get `rematch_started` (state in word_setup) and navigate back to the lobby for a new round (turn re-randomised when both resubmit).
+4. If the opponent has already left, the requester gets `rematch_unavailable` and the room is reverted to `waiting_for_opponent` (the absent opponent removed), so a `state_sync` returns them to the lobby. Declining is just leaving — the remaining player reverts to the lobby the same way.
 
 ## Reconnection Strategy (lobby-level implemented in Phase 2)
 

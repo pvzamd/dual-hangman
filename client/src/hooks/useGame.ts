@@ -18,7 +18,12 @@ export interface UseGameResult {
   error: string | null;
   /** Stored identity is missing/mismatched, or the server rejected reconnection — leave the room. */
   ejected: boolean;
+  /** Rematch state at game over. */
+  youRequestedRematch: boolean;
+  opponentWantsRematch: boolean;
+  rematchUnavailable: boolean;
   guess: (letter: string) => void;
+  requestRematch: () => void;
   leave: () => void;
 }
 
@@ -41,10 +46,18 @@ export function useGame(roomCode: string | undefined): UseGameResult {
   const [graceSeconds, setGraceSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [rejectedByServer, setRejectedByServer] = useState(false);
+  const [youRequestedRematch, setYouRequestedRematch] = useState(false);
+  const [opponentWantsRematch, setOpponentWantsRematch] = useState(false);
+  const [rematchUnavailable, setRematchUnavailable] = useState(false);
 
   useEffect(() => {
     if (!hasValidIdentity || !identity) return;
 
+    const clearRematch = () => {
+      setYouRequestedRematch(false);
+      setOpponentWantsRematch(false);
+      setRematchUnavailable(false);
+    };
     const requestSync = () => {
       socket.emit('reconnect_player', {
         roomCode: identity.roomCode,
@@ -55,6 +68,8 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     const syncFromState = ({ state }: StateSyncPayload) => {
       setView(state);
       setOpponentAway(false);
+      // Leaving game_over (new round, or reverted to lobby) clears rematch UI.
+      if (state.phase !== 'game_over') clearRematch();
     };
     const onOpponentJoined = ({ opponent }: OpponentJoinedPayload) => {
       setView((v) => (v ? { ...v, opponent } : v));
@@ -65,7 +80,12 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     const onGuessResult = ({ state }: GuessResultPayload) => setView(state);
     const onTurnChanged = ({ activePlayerId }: TurnChangedPayload) =>
       setView((v) => (v ? { ...v, activePlayerId } : v));
-    const onGameWon = ({ state }: GameWonPayload) => setView(state);
+    const onGameWon = ({ state }: GameWonPayload) => {
+      setView(state);
+      clearRematch(); // fresh game-over → clean rematch slate
+    };
+    const onRematchRequested = () => setOpponentWantsRematch(true);
+    const onRematchUnavailable = () => setRematchUnavailable(true);
     const onOpponentDisconnected = ({ graceSeconds: grace }: { graceSeconds: number }) => {
       setOpponentAway(true);
       setGraceSeconds(grace);
@@ -91,6 +111,9 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     socket.on('guess_result', onGuessResult);
     socket.on('turn_changed', onTurnChanged);
     socket.on('game_won', onGameWon);
+    socket.on('rematch_requested', onRematchRequested);
+    socket.on('rematch_started', syncFromState);
+    socket.on('rematch_unavailable', onRematchUnavailable);
     socket.on('opponent_disconnected', onOpponentDisconnected);
     socket.on('opponent_reconnected', onOpponentReconnected);
     socket.on('error_occurred', onError);
@@ -107,6 +130,9 @@ export function useGame(roomCode: string | undefined): UseGameResult {
       socket.off('guess_result', onGuessResult);
       socket.off('turn_changed', onTurnChanged);
       socket.off('game_won', onGameWon);
+      socket.off('rematch_requested', onRematchRequested);
+      socket.off('rematch_started', syncFromState);
+      socket.off('rematch_unavailable', onRematchUnavailable);
       socket.off('opponent_disconnected', onOpponentDisconnected);
       socket.off('opponent_reconnected', onOpponentReconnected);
       socket.off('error_occurred', onError);
@@ -119,11 +145,29 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     socket.emit('guess_letter', { letter });
   }, []);
 
+  const requestRematch = useCallback(() => {
+    setRematchUnavailable(false);
+    setYouRequestedRematch(true);
+    socket.emit('request_rematch');
+  }, []);
+
   const leave = useCallback(() => {
     socket.emit('leave_room');
     clearIdentity();
   }, []);
 
   const ejected = !hasValidIdentity || rejectedByServer;
-  return { view, opponentAway, graceSeconds, error, ejected, guess, leave };
+  return {
+    view,
+    opponentAway,
+    graceSeconds,
+    error,
+    ejected,
+    youRequestedRematch,
+    opponentWantsRematch,
+    rematchUnavailable,
+    guess,
+    requestRematch,
+    leave,
+  };
 }

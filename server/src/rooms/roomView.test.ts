@@ -57,7 +57,9 @@ describe('buildRoomView', () => {
 
     // No reveal mid-game...
     expect(hostView.opponentWordRevealed).toBeNull();
+    expect(hostView.yourWordRevealed).toBeNull();
     expect(joinerView.opponentWordRevealed).toBeNull();
+    expect(joinerView.yourWordRevealed).toBeNull();
 
     // Anti-cheat: no view ever contains a raw secret word.
     expect(JSON.stringify(hostView)).not.toContain('LIONESS');
@@ -66,7 +68,7 @@ describe('buildRoomView', () => {
     expect(JSON.stringify(joinerView)).not.toContain('LIONESS');
   });
 
-  it('reveals each player their own target word at game over', () => {
+  it('reveals BOTH secret words to each player at game over', () => {
     const { room, host, joiner } = twoPlayerRoom();
     host.secretWord = 'LIONESS';
     joiner.secretWord = 'OIL';
@@ -84,11 +86,13 @@ describe('buildRoomView', () => {
     }
     room.phase = 'game_over';
 
-    // Each side's reveal is the word THEY were guessing (their own target).
     const hostView = buildRoomView(room, host.id);
     const joinerView = buildRoomView(room, joiner.id);
-    expect(hostView.opponentWordRevealed).toBe(room.game.targetWordFor(host.id));
-    expect(joinerView.opponentWordRevealed).toBe(room.game.targetWordFor(joiner.id));
+    // Each player sees their own word and the opponent's word.
+    expect(hostView.yourWordRevealed).toBe('LIONESS');
+    expect(hostView.opponentWordRevealed).toBe('OIL');
+    expect(joinerView.yourWordRevealed).toBe('OIL');
+    expect(joinerView.opponentWordRevealed).toBe('LIONESS');
     // The winner's side is fully solved either way.
     expect(buildRoomView(room, winner).yourBoard?.solved).toBe(true);
   });

@@ -49,11 +49,11 @@
 - [x] Client: `GamePage` + `GameBoard`, `WordDisplay`, `GuessedLetters`, on-screen `Keyboard` (guessed letters disabled), wrong-guess stats counter
 - [x] Client: both boards update live; clear your-turn / their-turn indicator; navigate to game on `playing`
 
-## Phase 5 — Game Over & Restart
+## Phase 5 — Game Over & Restart ✅
 
-- [ ] Client: result screen (winner, reason, revealed words, wrong-guess stats)
-- [ ] Client: hangman figure as the loser's defeat visual (cosmetic — ADR-009)
-- [ ] Rematch flow back to `word_setup`
+- [x] Client: game-over result panel (winner/loser/forfeit messaging, both words revealed)
+- [x] Client: cosmetic hangman defeat figure for the loser (ADR-009)
+- [x] Rematch flow back to `word_setup` — mutual opt-in, with decline/unavailable returning to the lobby (ADR-012)
 
 ## Phase 6 — Polish & Resilience
 

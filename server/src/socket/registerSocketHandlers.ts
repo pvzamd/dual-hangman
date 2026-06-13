@@ -215,6 +215,51 @@ export function registerSocketHandlers(
     }
   });
 
+  socket.on('request_rematch', () => {
+    const { roomCode, playerId } = socket.data;
+    const room = roomCode ? roomManager.getRoom(roomCode) : undefined;
+    const player = room && playerId ? roomManager.getPlayer(room, playerId) : undefined;
+    if (!room || !player) {
+      return emitError(socket, 'INVALID_PHASE', 'You are not in a room.');
+    }
+
+    const outcome = roomManager.requestRematch(room.code, player.id);
+    switch (outcome.type) {
+      case 'invalid':
+        return emitError(socket, 'INVALID_PHASE', 'A rematch is only available after a game.');
+
+      case 'requested':
+        // Let the opponent know an offer is waiting; the requester's UI already
+        // reflects its own click.
+        if (outcome.opponent.socketId) {
+          io.to(outcome.opponent.socketId).emit('rematch_requested');
+        }
+        return;
+
+      case 'started':
+        // Fresh round — both clients return to word setup.
+        for (const p of room.players) {
+          if (p.socketId) {
+            io.to(p.socketId).emit('rematch_started', { state: buildRoomView(room, p.id) });
+          }
+        }
+        return;
+
+      case 'unavailable': {
+        // Opponent has gone: tell the requester, then revert the room to the
+        // lobby (remove the absent opponent) so they land back in waiting.
+        socket.emit('rematch_unavailable');
+        const result = roomManager.leaveRoom(room.code, outcome.opponent.id);
+        if (result && !result.destroyed) {
+          io.to(room.code).emit('state_sync', {
+            state: buildRoomView(result.room, result.remaining.id),
+          });
+        }
+        return;
+      }
+    }
+  });
+
   socket.on('chat_message', () => notImplemented(socket, 'chat_message (Phase 6)'));
 }
 

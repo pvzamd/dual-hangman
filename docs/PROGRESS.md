@@ -90,11 +90,17 @@
 - [x] GameBoard shows a forfeit-specific game-over banner
 - [x] Tests: GameManager.forfeit + RoomManager.forfeit (playing → forfeit; non-playing → null); live smoke test of both leave-during-play and grace-expiry-during-play
 
-## Phase 5 — Game Over & Restart
+## Phase 5 — Game Over & Restart ✅
 
-- [ ] Result screen (incl. wrong-guess stats)
-- [ ] Hangman figure as loser's defeat visual (ADR-009)
-- [ ] Rematch flow
+- [x] Dedicated game-over result panel in `GameBoard` (winner/loser/forfeit messaging)
+- [x] Reveal **both** secret words at game over (`yourWordRevealed` + `opponentWordRevealed`)
+- [x] Cosmetic `HangmanFigure` shown to the loser (ADR-009)
+- [x] Rematch flow — mutual opt-in (`request_rematch`); `rematch_requested` / `rematch_started` (ADR-012)
+- [x] Rematch sync: both opt in → `resetForRematch` → fresh `word_setup` round (reuses Phase 3 flow)
+- [x] Return to lobby if declined (leave) or unavailable (`rematch_unavailable` → revert to waiting)
+- [x] `useGame` exposes rematch state + `requestRematch`; GamePage wires the controls
+- [x] Tests: `RoomManager.requestRematch` + `resetForRematch` lifecycle; roomView both-words reveal (51 total)
+- [x] Live smoke test: full rematch into a 2nd round, decline-by-leave → lobby, opponent-gone → unavailable → lobby
 
 ## Phase 6 — Polish & Resilience
 

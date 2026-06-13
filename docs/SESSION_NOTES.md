@@ -199,3 +199,27 @@ Begin **Phase 5 — Game Over & Restart**: polish the result screen, add the cos
 Unchanged: begin **Phase 5 — Game Over & Restart** (result screen polish, hangman defeat figure, rematch). The forfeit win path already produces a correct `game_over` state for the result screen to build on.
 
 ---
+
+## Session 9 — 2026-06-13
+
+### Work Completed
+
+- **Phase 5 (Game Over & Restart) complete.** Updated GAME_RULES.md first (new "Game Over and Rematch" section).
+- Shared contract: added `request_rematch` (client→server) and `rematch_requested` / `rematch_started` / `rematch_unavailable` (server→client); added `yourWordRevealed` to `GameView`.
+- `roomView.buildRoomView`: at `game_over` reveals **both** secret words (`yourWordRevealed` = your own, `opponentWordRevealed` = opponent's), sourced from `ServerPlayer.secretWord`.
+- `RoomManager`: `ServerPlayer.wantsRematch` flag; `requestRematch(code, playerId)` returns a discriminated outcome (`invalid` / `requested` / `started` / `unavailable`); `resetForRematch(room)` clears words/flags/game and returns to `word_setup`. `leaveRoom` now also clears the remaining player's `wantsRematch`.
+- Socket handler: `request_rematch` maps the outcome — `requested` → notify opponent; `started` → personalized `rematch_started` to both; `unavailable` → `rematch_unavailable` + revert the requester to the lobby (remove absent opponent + `state_sync`).
+- Client: `HangmanFigure` (static SVG defeat illustration). `GameBoard` now has a game-over result panel — both revealed words, the figure for the loser, and rematch controls (Play again / Accept rematch / Waiting… / unavailable, plus Leave). `useGame` tracks `youRequestedRematch` / `opponentWantsRematch` / `rematchUnavailable` and exposes `requestRematch`; rematch flags reset when leaving game_over. GamePage wires it through.
+- Tests up to 51 (+5): `RoomManager.requestRematch` (waiting / both-started / unavailable / invalid) and `resetForRematch`; roomView now asserts both words revealed at game over and null while playing.
+- Live smoke test over real sockets: (1) full rematch — both opt in, room resets to word_setup, and a **second** round actually plays; (2) decline-by-leave returns the requester to the lobby; (3) opponent disconnect → `rematch_unavailable` → requester reverts to the lobby.
+
+### Decisions Made This Session
+
+- **ADR-012**: rematch is mutual opt-in and reuses the `word_setup` flow (no new phase); declining is just leaving; both secret words are revealed at game over.
+- No "same words again" shortcut — a rematch always re-collects words (re-using them would leak information).
+
+### Next Recommended Action
+
+Begin **Phase 6 — Polish & Resilience**: idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`, also reclaims post-forfeit ghost rooms), chat sidebar (`chat_message` is still stubbed), animations, and responsive/mobile layout.
+
+---

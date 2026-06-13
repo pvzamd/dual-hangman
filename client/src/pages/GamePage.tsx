@@ -11,7 +11,19 @@ import GameBoard from '../components/GameBoard';
 export default function GamePage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const navigate = useNavigate();
-  const { view, opponentAway, graceSeconds, error, ejected, guess, leave } = useGame(roomCode);
+  const {
+    view,
+    opponentAway,
+    graceSeconds,
+    error,
+    ejected,
+    youRequestedRematch,
+    opponentWantsRematch,
+    rematchUnavailable,
+    guess,
+    requestRematch,
+    leave,
+  } = useGame(roomCode);
 
   useEffect(() => {
     if (ejected) navigate('/', { replace: true });
@@ -42,7 +54,11 @@ export default function GamePage() {
       opponentAway={opponentAway}
       graceSeconds={graceSeconds}
       error={error}
+      youRequestedRematch={youRequestedRematch}
+      opponentWantsRematch={opponentWantsRematch}
+      rematchUnavailable={rematchUnavailable}
       onGuess={guess}
+      onRematch={requestRematch}
       onLeave={handleLeave}
     />
   );
