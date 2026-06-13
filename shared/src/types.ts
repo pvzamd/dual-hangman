@@ -55,6 +55,9 @@ export interface GameView {
   phase: RoomPhase;
   you: PlayerInfo;
   opponent: PlayerInfo | null;
+  /** Running session score (rounds won); persists across rematches, resets with the room. */
+  yourScore: number;
+  opponentScore: number;
   /** Word-setup ready flags — true once that side's secret word is stored. */
   yourWordReady: boolean;
   opponentWordReady: boolean;

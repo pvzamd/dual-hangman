@@ -314,3 +314,25 @@ Playtest the polish on real devices. When ready, **Phase 7 — Scoring & Multi-R
 Phase 6 is fully done. Next is **Phase 7 — Scoring & Multi-Round** (decide where session score state lives, still in-memory per ADR-002), or more real-device playtesting first.
 
 ---
+
+## Session 14 — 2026-06-13
+
+### Work Completed
+
+- **Phase 7 — session score tracking** (in-memory only; ADR-014). The core game is now feature-complete (Phases 0–7).
+- Server: `ServerPlayer.score` (starts 0). `RoomManager.recordRoundResult(room)` awards the winner +1 and is called once per round end — from `forfeit` (`opponent_forfeit`) and from the `guess_letter` handler on a solve (`word_solved`), before the `game_won` views are built so they carry the new score. `resetForRematch` leaves score untouched (persists across rematches); `leaveRoom`'s revert-to-waiting resets the survivor's score so a new opponent starts 0–0.
+- Shared: `GameView` gained `yourScore` / `opponentScore`; `roomView` fills them from `ServerPlayer.score`.
+- Client: `GameBoard` shows a score line (`{you} N vs M {opponent}`) during play and a "Score: …" line on the game-over panel — both read straight from the synced view.
+- Tests up to 64 (+7): `RoomManager` score lifecycle (start-at-0, award-once, no-op mid-round, forfeit awards, rematch preserves, leave resets) and a roomView score-projection test. Live score smoke test over real sockets: round win → 1–0, rematch preserves the total, a second round accumulates to 2 total, and a forfeit awards a point.
+- Docs: GAME_RULES Scoring section rewritten (was "future"), ADR-014 added, ARCHITECTURE (GameView fields + scoring note), PROGRESS + ROADMAP Phase 7 ticked, START_HERE (status now feature-complete; ADR table), CLAUDE_CONTEXT.
+
+### Notes
+
+- Stayed within scope: no DB/Mongo, no auth/accounts/profiles, no leaderboards/history/stats pages, no best-of-N. Score is purely per-room, in-memory (dies with the room / on re-pairing).
+- Resetting the survivor's score on re-pairing is a judgement call beyond the literal "reset on destroy" — a running tally vs a brand-new opponent would mislead, so a fresh pairing starts fresh (noted in ADR-014).
+
+### Next Recommended Action
+
+The game is feature-complete through Phase 7. Options: more real-device playtesting (`docs/LOCAL_PLAYTESTING.md`), a deployment pass (`docs/DEPLOYMENT.md`), or a Nice-to-Have from `docs/ROADMAP.md` (dictionary validation, spectator mode, PWA, simultaneous race mode).
+
+---

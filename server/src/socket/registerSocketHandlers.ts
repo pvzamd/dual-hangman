@@ -184,6 +184,7 @@ export function registerSocketHandlers(
 
     if (room.game.isOver) {
       room.phase = 'game_over';
+      roomManager.recordRoundResult(room); // award the point before building views
       // Personalized: game_won state reveals each player's own target word.
       for (const p of room.players) {
         if (p.socketId) {

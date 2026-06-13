@@ -64,10 +64,10 @@
 - [x] Responsive polish (chat sidebar/stacked layout; copy-room-code)
 - [x] Sound effects — Web Audio synth cues + mute toggle, autoplay-safe (ADR-013)
 
-## Phase 7 — Scoring & Multi-Round
+## Phase 7 — Scoring ✅
 
-- [ ] Persistent score across rounds in a session
-- [ ] Best-of-N match config
+- [x] Session score across rounds in a room — in-memory, persists across rematches, resets with the room (ADR-014)
+- [ ] Best-of-N match config (out of scope — no fixed match length for now)
 
 ## Nice-to-Have / Future
 

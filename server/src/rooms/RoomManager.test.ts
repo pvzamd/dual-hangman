@@ -291,4 +291,63 @@ describe('RoomManager', () => {
       expect(manager.getRoom(room.code)).toBe(room);
     });
   });
+
+  describe('score (Phase 7)', () => {
+    it('players start at 0', () => {
+      const manager = new RoomManager();
+      const room = manager.createRoom('Alice');
+      expect(room.players[0].score).toBe(0);
+      const join = manager.joinRoom(room.code, 'Bob');
+      if (!join.ok) throw new Error('join failed');
+      expect(join.player.score).toBe(0);
+    });
+
+    it('recordRoundResult awards exactly one point to the winner', () => {
+      const { manager, room } = gameOverRoom(); // active player solved → winner set
+      const winnerId = room.game!.winnerId!;
+
+      manager.recordRoundResult(room);
+
+      const winner = room.players.find((p) => p.id === winnerId)!;
+      const loser = room.players.find((p) => p.id !== winnerId)!;
+      expect(winner.score).toBe(1);
+      expect(loser.score).toBe(0);
+    });
+
+    it('recordRoundResult is a no-op while a round is still in progress', () => {
+      const { manager, room } = playingRoom();
+      manager.recordRoundResult(room);
+      expect(room.players.every((p) => p.score === 0)).toBe(true);
+    });
+
+    it('a forfeit awards the surviving player a point', () => {
+      const { manager, room, host, joiner } = playingRoom();
+      manager.forfeit(room.code, host.id);
+      expect(joiner.score).toBe(1);
+      expect(host.score).toBe(0);
+    });
+
+    it('score survives a rematch reset', () => {
+      const { manager, room, host, joiner } = gameOverRoom();
+      host.score = 2;
+      joiner.score = 1;
+
+      manager.resetForRematch(room);
+
+      expect(host.score).toBe(2);
+      expect(joiner.score).toBe(1);
+    });
+
+    it('leaving (revert to waiting) resets the survivor score for a fresh pairing', () => {
+      const { manager, room, host, joiner } = gameOverRoom();
+      host.score = 3;
+      joiner.score = 2;
+
+      const result = manager.leaveRoom(room.code, joiner.id);
+
+      if (!result || result.destroyed) throw new Error('expected a revert, not destroy');
+      expect(result.remaining.id).toBe(host.id);
+      expect(host.score).toBe(0);
+    });
+  });
 });

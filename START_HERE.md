@@ -15,13 +15,13 @@ Dual Hangman is a real-time two-player browser game. Each player sets a secret w
 
 ## 2. Current Status
 
-|                     |                                                                                                                                                                                                                                        |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Completed**       | Phases 0–6: foundation, scaffolding, lobby (incl. reconnection), word setup, core gameplay, game over + rematch, polish & resilience                                                                                                   |
-| **Current phase**   | **Phase 7 — Scoring & Multi-Round** (not started)                                                                                                                                                                                      |
-| **Next task**       | Persistent score across rounds in a session; best-of-N config (see [docs/ROADMAP.md](docs/ROADMAP.md)). Or keep playtesting first.                                                                                                     |
-| **Working**         | Full game loop + polish: rooms, word setup, turn-based guessing, forfeit, game over (both words + defeat figure), rematch, in-room chat, idle-room sweep, responsive layout, subtle animations, sound effects (mutable); 57 unit tests |
-| **Not working yet** | Scoring / multi-round (Phase 7)                                                                                                                                                                                                        |
+|                     |                                                                                                                                                                                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Completed**       | Phases 0–7: foundation → lobby → word setup → gameplay → game over + rematch → polish & resilience → **session scoring**. Core game is feature-complete.                                                                                      |
+| **Current phase**   | No phase in progress. See **Nice-to-Have / Future** in [docs/ROADMAP.md](docs/ROADMAP.md) for optional ideas.                                                                                                                                 |
+| **Next task**       | Optional: keep playtesting, or pick a Nice-to-Have (e.g. dictionary validation, spectator mode). Best-of-N / persistence were intentionally left out.                                                                                         |
+| **Working**         | Full game loop + polish: rooms, word setup, turn-based guessing, forfeit, game over (both words + defeat figure), rematch, session score, in-room chat, idle-room sweep, responsive layout, subtle animations, sound (mutable); 64 unit tests |
+| **Not working yet** | Nothing planned outstanding. Best-of-N, persistence, accounts, leaderboards — out of scope by design (ADR-002).                                                                                                                               |
 
 > Keep this table phase-accurate. Fine-grained, always-current state lives in [docs/PROGRESS.md](docs/PROGRESS.md) and [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md).
 
@@ -71,6 +71,7 @@ Full rationale and trade-offs in [docs/DECISIONS.md](docs/DECISIONS.md).
 | 011 | Dedicated `/game` route + shared `useGame` hook with phase-driven navigation; `game_won` reveals each player's own target word                              |
 | 012 | Rematch is mutual opt-in (reuses the word_setup flow); declining = leaving; both secret words revealed at game over                                         |
 | 013 | Sound effects via Web Audio synthesis (no asset files); unlocked on first gesture; mute toggle persisted in localStorage                                    |
+| 014 | Session score lives on the room (in-memory); +1 per round win, persists across rematches, resets when the room ends                                         |
 
 ---
 

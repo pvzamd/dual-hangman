@@ -111,7 +111,11 @@
 - [x] Responsive polish — chat sidebar on large screens / stacked on mobile; copy-room-code button in the lobby
 - [x] Sound effects — six short Web Audio cues (correct, wrong, your-turn, opponent-joined, won, lost) + mute toggle, autoplay-safe (ADR-013)
 
-## Phase 7 — Scoring
+## Phase 7 — Scoring ✅
 
-- [ ] Session score tracking
-- [ ] Score display
+- [x] Session score on the room (in-memory; `ServerPlayer.score`, ADR-014)
+- [x] Winner scores 1 point per round — both `word_solved` and `opponent_forfeit`
+- [x] Score persists across rematches; resets when the room ends / re-pairs
+- [x] `GameView.yourScore` / `opponentScore`; shown during play and on the game-over screen
+- [x] Tests: score lifecycle (award, no-op mid-round, forfeit, rematch-preserve, leave-reset) + roomView projection; live score smoke test
+- [ ] Best-of-N match config (intentionally out of scope)

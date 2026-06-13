@@ -52,6 +52,12 @@ export default function GameBoard({
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center gap-4 p-4 lg:max-w-5xl">
       <p className="text-xs tracking-widest text-slate-500">ROOM {view.roomCode}</p>
+      <ScoreLine
+        youName={you.name}
+        opponentName={opponentName}
+        yourScore={view.yourScore}
+        opponentScore={view.opponentScore}
+      />
       <TurnIndicator view={view} opponentAway={opponentAway} graceSeconds={graceSeconds} />
 
       <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
@@ -68,6 +74,13 @@ export default function GameBoard({
                 <RevealedWord label="Your word" word={view.yourWordRevealed} />
                 <RevealedWord label={`${opponentName}'s word`} word={view.opponentWordRevealed} />
               </div>
+
+              <p className="text-sm text-slate-300">
+                Score:{' '}
+                <span className="font-semibold text-slate-100">
+                  {you.name} {view.yourScore} — {view.opponentScore} {opponentName}
+                </span>
+              </p>
 
               <RematchControls
                 opponentName={opponentName}
@@ -128,6 +141,30 @@ export default function GameBoard({
         <GameChat messages={messages} youId={you.id} onSend={onSendChat} />
       </div>
     </main>
+  );
+}
+
+function ScoreLine({
+  youName,
+  opponentName,
+  yourScore,
+  opponentScore,
+}: {
+  youName: string;
+  opponentName: string;
+  yourScore: number;
+  opponentScore: number;
+}) {
+  return (
+    <div className="flex items-center gap-3 text-sm" aria-label="Session score">
+      <span className="text-slate-300">
+        {youName} <span className="font-bold text-emerald-400">{yourScore}</span>
+      </span>
+      <span className="text-slate-600">vs</span>
+      <span className="text-slate-300">
+        <span className="font-bold text-emerald-400">{opponentScore}</span> {opponentName}
+      </span>
+    </div>
   );
 }
 

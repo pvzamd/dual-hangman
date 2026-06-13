@@ -25,6 +25,17 @@ describe('buildRoomView', () => {
     expect(joinerView.opponentWordReady).toBe(true);
   });
 
+  it('projects each player session score (yours vs opponent)', () => {
+    const { room, host, joiner } = twoPlayerRoom();
+    host.score = 2;
+    joiner.score = 1;
+
+    expect(buildRoomView(room, host.id).yourScore).toBe(2);
+    expect(buildRoomView(room, host.id).opponentScore).toBe(1);
+    expect(buildRoomView(room, joiner.id).yourScore).toBe(1);
+    expect(buildRoomView(room, joiner.id).opponentScore).toBe(2);
+  });
+
   it('keeps boards null until the game exists', () => {
     const { room, host } = twoPlayerRoom();
     const view = buildRoomView(room, host.id);

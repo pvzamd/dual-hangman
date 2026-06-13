@@ -50,9 +50,14 @@ Two players compete head-to-head. Each player secretly chooses a word; they then
 
 A disconnected player has **60 seconds** to reconnect (the opponent sees a countdown). Reconnecting restores the full game state. Failing to return forfeits the round.
 
-## Scoring (future — Phase 7)
+## Scoring
 
-Multi-round sessions will track a cumulative score. Wrong-guess statistics may feed into it. Rules TBD.
+Each room keeps a **session score** — rounds won by each player.
+
+- The winner of a round scores **1 point**. Both win types count: solving the opponent's word (`word_solved`) and an opponent forfeit (`opponent_forfeit`).
+- The score is shown during play and on the game-over screen.
+- It **persists across rematches** within the same room, so a series accumulates (e.g. 2 – 1).
+- It is **in-memory only** and resets when the room ends — when both players leave (room destroyed) or a new opponent re-pairs into a room someone left. There is no best-of-N target, no persistence, and no cross-session history.
 
 ## Chat / Communication
 

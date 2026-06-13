@@ -54,6 +54,7 @@ dual-hangman/
 │       ├── rooms/RoomManager.ts             ← rooms, join/leave/forfeit/rematch, reconnect, grace timers, idle sweep
 │       ├── rooms/roomView.ts                ← Room → client-safe GameView projection
 │       ├── game/GameManager.ts              ← round state + guessLetter + forfeit (turn rules, win detection)
+│       │                                       (RoomManager.recordRoundResult awards the session point)
 │       └── *.test.ts                        ← Vitest unit tests beside the code they cover
 └── docs/
 ```
@@ -170,6 +171,7 @@ Compile-time truth: `shared/src/events.ts`. Both sides instantiate Socket.IO wit
 Clients only ever receive `GameView` — a per-player projection built by `buildRoomView(room, playerId)` (which delegates board fields to the room's `GameManager` once playing):
 
 - `yourWordReady` / `opponentWordReady` — word-setup ready flags, so a refresh during setup restores the right screen.
+- `yourScore` / `opponentScore` — running session score (rounds won), persists across rematches (ADR-014).
 - `yourBoard` — your progress guessing the **opponent's** word (`maskedWord` hides unrevealed letters as `null`).
 - `opponentBoard` — the opponent's progress guessing **your** word.
 - `activePlayerId`, `winnerId`, `gameOverReason`; and `yourWordRevealed` + `opponentWordRevealed` — **both** secret words, populated only at game over.

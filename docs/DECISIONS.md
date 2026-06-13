@@ -298,3 +298,26 @@ Synthesize the six effects (correct, wrong, your-turn, opponent-joined, won, los
 - Trigger choices keep it from getting noisy: correct/wrong play only for the local player's own guess, your-turn on acquiring the turn, opponent-joined for the host, won/lost per outcome.
 
 ---
+
+## ADR-014 — Session Score on the Room (In-Memory)
+
+**Date:** 2026-06-13 (Phase 7)
+**Status:** Accepted
+
+### Decision
+
+Each `ServerPlayer` carries a `score` (rounds won). The winner of a round gets +1 via `RoomManager.recordRoundResult(room)`, called once per round end — from `forfeit` (opponent_forfeit) and from the guess handler on a solve (word_solved). `GameView` exposes `yourScore` / `opponentScore`. The score persists across rematches (`resetForRematch` leaves it untouched) and dies with the room; when a player leaves and the room reverts to waiting, the survivor's score is reset so a new opponent starts a fresh 0–0.
+
+### Rationale
+
+- Score is just per-pairing session state, so it belongs with the in-memory room (ADR-002) — no DB, no accounts, no history.
+- Putting it on `ServerPlayer` makes "persists across rematch / resets with the room" fall out for free: the players survive `resetForRematch` but not room destruction.
+- One `recordRoundResult` method keeps both win paths consistent and unit-testable.
+
+### Trade-offs
+
+- A server restart loses scores (same as all room state — accepted, ADR-002).
+- Resetting the survivor's score on re-pairing is a judgement call (the requirement only specified reset-on-destroy); a running tally against a brand-new opponent would be misleading, so a fresh pairing starts fresh.
+- No best-of-N / match length — explicitly out of scope for Phase 7.
+
+---

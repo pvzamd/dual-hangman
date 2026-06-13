@@ -22,6 +22,8 @@ export interface ServerPlayer {
   secretWord: string | null;
   /** Set at game_over when this player opts into a rematch (cleared on reset). */
   wantsRematch: boolean;
+  /** Rounds won this session; survives rematches, dies with the room (Phase 7). */
+  score: number;
 }
 
 export interface Room {
@@ -118,6 +120,8 @@ export class RoomManager {
     room.phase = 'waiting_for_opponent';
     remaining.secretWord = null;
     remaining.wantsRematch = false;
+    // The session is over for this pairing — a new opponent starts a fresh 0–0.
+    remaining.score = 0;
     room.game = null;
     room.lastActivityAt = Date.now();
     return { destroyed: false, room, remaining };
@@ -141,11 +145,24 @@ export class RoomManager {
     room.phase = 'game_over';
     forfeiter.connected = false;
     forfeiter.socketId = null;
+    this.recordRoundResult(room);
     room.lastActivityAt = Date.now();
 
     const winner = room.players.find((p) => p.id === room.game!.winnerId);
     if (!winner) return null; // unreachable: the winner is the other seated player
     return { room, winner, forfeiterId: playerId };
+  }
+
+  /**
+   * Awards 1 point to the round's winner (Phase 7). Call exactly once when a
+   * round ends — from `forfeit` here, and from the guess handler on a solve.
+   * No-op if there is no winner yet.
+   */
+  recordRoundResult(room: Room): void {
+    const winnerId = room.game?.winnerId;
+    if (!winnerId) return;
+    const winner = room.players.find((p) => p.id === winnerId);
+    if (winner) winner.score += 1;
   }
 
   /**
@@ -274,6 +291,7 @@ function createPlayer(name: string): ServerPlayer {
     connected: true,
     secretWord: null,
     wantsRematch: false,
+    score: 0,
   };
 }
 

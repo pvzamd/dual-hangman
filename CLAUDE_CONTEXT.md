@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 13)
+> Last updated: 2026-06-13 (end of Session 14)
 
 ---
 
@@ -17,9 +17,11 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 ## Current Phase
 
-**Phase 6 — Polish & Resilience (COMPLETE)**
+**Phase 7 — Scoring (COMPLETE) — core game feature-complete (Phases 0–7)**
 
-Everything through Phase 5 works (lobby → word setup → play → game over → rematch). Phase 6 added: **idle-room sweep** (`RoomManager.sweepIdleRooms` on a 60s `unref`'d interval in `index.ts`, reclaims rooms idle past `ROOM_IDLE_TIMEOUT_MINUTES`, including post-forfeit ghosts); **in-room chat** (`chat_message` live — shared `normalizeChatText` validates/caps, broadcast to the room, ephemeral; client `GameChat` is a sidebar on `lg` / stacked on mobile, in `useGame`); **responsive polish** (game screen `lg` two-column with chat sidebar; copy-room-code button in the lobby); **subtle animations** (letter reveal + game-over fade-in via keyframes in `index.css`, honouring `prefers-reduced-motion`); and **sound effects** (`lib/sound.ts` — six short Web Audio cues fired from `useGame`, autoplay-unlocked on first gesture, mute toggle in `SoundToggle`; ADR-013). 57 Vitest tests; chat + sweep covered, chat smoke-tested over real sockets. Gameplay rules unchanged; socket contract only gained behavior on the already-defined `chat_message`. **Next: Phase 7 — Scoring & Multi-Round** (not started).
+Phase 7 added an in-memory **session score** (ADR-014): each `ServerPlayer` has a `score`; `RoomManager.recordRoundResult(room)` awards the winner +1 — called from `forfeit` and from the guess handler on a solve, so both `word_solved` and `opponent_forfeit` count. `GameView` exposes `yourScore`/`opponentScore`; the client shows a score line during play and on the game-over screen. Score **persists across rematches** (`resetForRematch` leaves it) and **resets when the room ends** (destroy, or a survivor reverting to waiting for a new opponent). No best-of-N, no persistence, no accounts (out of scope). 64 Vitest tests (score lifecycle covered) + live score smoke test. Earlier phases intact (lobby, gameplay, rematch, chat, idle sweep, sound).
+
+**No phase in progress.** Remaining ideas are in `docs/ROADMAP.md` → Nice-to-Have / Future.
 
 ---
 
@@ -55,7 +57,7 @@ client/src/components/       ← WordSetupForm, GameBoard, TurnIndicator, WordDi
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health, idle-room sweep interval
 server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
 server/src/socket/registerSocketHandlers.ts  ← all events live (lobby, word, guess, forfeit, rematch, chat)
-server/src/rooms/RoomManager.ts              ← rooms, join/leave/forfeit/rematch, reconnect, grace timers, sweepIdleRooms
+server/src/rooms/RoomManager.ts              ← rooms, join/leave/forfeit/rematch, reconnect, grace timers, sweepIdleRooms, recordRoundResult (score)
 server/src/rooms/roomView.ts                 ← Room → GameView projection (delegates to game)
 server/src/game/GameManager.ts               ← round state + guessLetter + forfeit (rules, win detection)
 ```
@@ -74,12 +76,9 @@ npm run format       # prettier
 
 ---
 
-## Outstanding Tasks (Phase 7 — Scoring & Multi-Round; NOT started)
+## Outstanding Tasks
 
-- [ ] Persistent score across rounds within a session
-- [ ] Best-of-N match config
-
-Full roadmap in `docs/ROADMAP.md`. Phase 7 needs a deliberate decision on where score state lives (still in-memory per ADR-002). (Phase 6 is fully done — sound effects, the last optional item, shipped via ADR-013.)
+**None planned — Phases 0–7 are complete and the core game is feature-complete.** Optional future ideas live in `docs/ROADMAP.md` → Nice-to-Have / Future (e.g. dictionary validation, spectator mode, simultaneous "race mode", PWA). Explicitly out of scope for now: best-of-N, persistence/DB, accounts, leaderboards, match history (ADR-002).
 
 ---
 
@@ -87,7 +86,8 @@ Full roadmap in `docs/ROADMAP.md`. Phase 7 needs a deliberate decision on where 
 
 - Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
 - Claude Code harness quirks (npm.cmd etc.) live in `CLAUDE.md`.
-- Tests: server only so far (`npm run test` → 57 Vitest tests). No client tests yet.
+- Tests: server only so far (`npm run test` → 64 Vitest tests). No client tests yet.
+- Session score lives on `ServerPlayer.score` (ADR-014); persists across rematch, but resets when a survivor reverts to waiting for a new opponent — so a fresh pairing starts 0–0.
 - In-game forfeit is wired through `handleExit` in the socket handler: `leave_room` and grace-timer expiry both forfeit during `playing` (opponent wins), and keep the revert/destroy behavior otherwise. Grace window is env-overridable (`RECONNECT_GRACE_SECONDS`, default 60).
 - Rematch reuses `word_setup` (no new phase). Post-forfeit ghost rooms are now reclaimed by the idle sweep (60s interval, `ROOM_IDLE_TIMEOUT_MINUTES`).
 - Chat is ephemeral (no persistence) and broadcast to the room; the client `GameChat` only appears on the GamePage (playing/game_over), though the server accepts chat in any in-room phase.
@@ -100,6 +100,6 @@ Full roadmap in `docs/ROADMAP.md`. Phase 7 needs a deliberate decision on where 
 - TypeScript only; no plain JS in `src/` directories.
 - Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
 - Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: correct guess → guess again; wrong guess → turn passes; win by full reveal only (ADR-004 + ADR-009).
-- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-014).
+- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-015).
 - Follow the mandatory documentation maintenance rules in `START_HERE.md` §8 — tick `docs/PROGRESS.md`, append to `docs/SESSION_NOTES.md`, and refresh this file before ending a session.
 - Never commit `.env`; keep `.env.example` files current.

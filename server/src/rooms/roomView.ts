@@ -21,6 +21,8 @@ export function buildRoomView(room: Room, playerId: PlayerId): GameView {
     phase: room.phase,
     you: toPlayerInfo(you),
     opponent: opponent ? toPlayerInfo(opponent) : null,
+    yourScore: you.score,
+    opponentScore: opponent?.score ?? 0,
     yourWordReady: you.secretWord !== null,
     opponentWordReady: opponent ? opponent.secretWord !== null : false,
     yourBoard: game ? game.boardFor(you.id) : null,
