@@ -291,3 +291,26 @@ Continue real-device playtesting (`docs/LOCAL_PLAYTESTING.md`). When ready to bu
 Playtest the polish on real devices. When ready, **Phase 7 — Scoring & Multi-Round** is next — start by deciding where session score state lives (still in-memory, per ADR-002).
 
 ---
+
+## Session 13 — 2026-06-13
+
+### Work Completed
+
+- **Sound effects** — the one deferred optional Phase 6 item. Client-only; gameplay logic and the server untouched.
+- New `client/src/lib/sound.ts`: synthesizes six short cues with the Web Audio API (no asset files) — `correct`, `wrong`, `your-turn`, `opponent-joined`, `won`, `lost` (ADR-013). Soft attack/decay envelopes keep them subtle.
+- **Autoplay-safe:** the audio context is created/resumed on the first user gesture via a one-time listener in `App`; `playSound` stays silent until then.
+- **Mute setting:** `SoundToggle` (fixed speaker button on every screen) persists on/off in `localStorage`; enabling plays a brief confirmation cue.
+- Triggers wired into `useGame`'s existing handlers (no new state/logic): correct/wrong for **your own** guess only; your-turn on acquiring the turn (`turn_changed` to you, or first turn at `game_started`); opponent-joined for the host; won/lost per outcome. No sound on button clicks or key presses; no music.
+- Verified: format, typecheck, lint, 57 tests, builds. No new server behavior → no new tests (and the client has no test runner; Web Audio isn't unit-testable in jsdom).
+- Docs: ADR-013 added; PROGRESS + ROADMAP Phase 6 sound item ticked (Phase 6 now fully complete); ARCHITECTURE module map + sound note; START_HERE (ADR table + status); CLAUDE_CONTEXT.
+
+### Notes
+
+- Requirements met: respects autoplay restrictions, mute/unmute setting, subtle/short, no music, no per-click/keypress sound, gameplay unchanged.
+- Manual check (browser) recommended during playtesting — synth cues can't be asserted in CI.
+
+### Next Recommended Action
+
+Phase 6 is fully done. Next is **Phase 7 — Scoring & Multi-Round** (decide where session score state lives, still in-memory per ADR-002), or more real-device playtesting first.
+
+---

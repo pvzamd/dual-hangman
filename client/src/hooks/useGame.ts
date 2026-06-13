@@ -11,6 +11,7 @@ import type {
 } from '@dual-hangman/shared';
 import { socket } from '../socket';
 import { clearIdentity, loadIdentity } from '../lib/identity';
+import { playSound } from '../lib/sound';
 
 export interface UseGameResult {
   view: GameView | null;
@@ -79,15 +80,31 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     const onOpponentJoined = ({ opponent }: OpponentJoinedPayload) => {
       setView((v) => (v ? { ...v, opponent } : v));
       setOpponentAway(false);
+      playSound('opponent-joined');
     };
     const onWordSetupStarted = () => setView((v) => (v ? { ...v, phase: 'word_setup' } : v));
     const onOpponentWordReady = () => setView((v) => (v ? { ...v, opponentWordReady: true } : v));
-    const onGuessResult = ({ state }: GuessResultPayload) => setView(state);
-    const onTurnChanged = ({ activePlayerId }: TurnChangedPayload) =>
+    const onGameStarted = ({ state }: StateSyncPayload) => {
+      setView(state);
+      setOpponentAway(false);
+      clearRematch();
+      if (state.activePlayerId === identity.playerId) playSound('your-turn');
+    };
+    const onGuessResult = (payload: GuessResultPayload) => {
+      setView(payload.state);
+      // Feedback for your OWN guess only (the opponent's guesses stay quiet).
+      if (payload.guesserId === identity.playerId) {
+        playSound(payload.correct ? 'correct' : 'wrong');
+      }
+    };
+    const onTurnChanged = ({ activePlayerId }: TurnChangedPayload) => {
       setView((v) => (v ? { ...v, activePlayerId } : v));
+      if (activePlayerId === identity.playerId) playSound('your-turn');
+    };
     const onGameWon = ({ state }: GameWonPayload) => {
       setView(state);
       clearRematch(); // fresh game-over → clean rematch slate
+      playSound(state.winnerId === identity.playerId ? 'won' : 'lost');
     };
     const onRematchRequested = () => setOpponentWantsRematch(true);
     const onRematchUnavailable = () => setRematchUnavailable(true);
@@ -114,7 +131,7 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     socket.on('opponent_joined', onOpponentJoined);
     socket.on('word_setup_started', onWordSetupStarted);
     socket.on('opponent_word_ready', onOpponentWordReady);
-    socket.on('game_started', syncFromState);
+    socket.on('game_started', onGameStarted);
     socket.on('guess_result', onGuessResult);
     socket.on('turn_changed', onTurnChanged);
     socket.on('game_won', onGameWon);
@@ -134,7 +151,7 @@ export function useGame(roomCode: string | undefined): UseGameResult {
       socket.off('opponent_joined', onOpponentJoined);
       socket.off('word_setup_started', onWordSetupStarted);
       socket.off('opponent_word_ready', onOpponentWordReady);
-      socket.off('game_started', syncFromState);
+      socket.off('game_started', onGameStarted);
       socket.off('guess_result', onGuessResult);
       socket.off('turn_changed', onTurnChanged);
       socket.off('game_won', onGameWon);

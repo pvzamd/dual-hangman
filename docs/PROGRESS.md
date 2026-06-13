@@ -109,7 +109,7 @@
 - [x] Chat sidebar — `chat_message` live; ephemeral broadcast, shared `normalizeChatText` (trim/cap); responsive `GameChat`
 - [x] Subtle animations — letter reveal + game-over fade-in; honours `prefers-reduced-motion`
 - [x] Responsive polish — chat sidebar on large screens / stacked on mobile; copy-room-code button in the lobby
-- [ ] Sound effects (optional — not implemented)
+- [x] Sound effects — six short Web Audio cues (correct, wrong, your-turn, opponent-joined, won, lost) + mute toggle, autoplay-safe (ADR-013)
 
 ## Phase 7 — Scoring
 

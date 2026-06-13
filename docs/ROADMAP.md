@@ -62,7 +62,7 @@
 - [x] Chat sidebar (`chat_message`) — ephemeral, responsive
 - [x] Subtle animations (letter reveal, game-over fade-in; respects reduced-motion)
 - [x] Responsive polish (chat sidebar/stacked layout; copy-room-code)
-- [ ] Sound effects (optional — deferred)
+- [x] Sound effects — Web Audio synth cues + mute toggle, autoplay-safe (ADR-013)
 
 ## Phase 7 — Scoring & Multi-Round
 

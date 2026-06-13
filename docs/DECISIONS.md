@@ -276,3 +276,25 @@ Node 18 (previous dev machine default) is end-of-life and below the minimum for 
 - The loser of a forfeit can't be offered a rematch (they're gone); the winner simply returns to the lobby. Acceptable.
 
 ---
+
+## ADR-013 — Sound Effects via Web Audio Synthesis
+
+**Date:** 2026-06-13 (Phase 6 — deferred optional item)
+**Status:** Accepted
+
+### Decision
+
+Synthesize the six effects (correct, wrong, your-turn, opponent-joined, won, lost) procedurally with the Web Audio API instead of shipping audio files. The `AudioContext` is created/resumed on the first user gesture (autoplay policy); until then `playSound` is silently skipped. A mute toggle persists in `localStorage` (default: on). Tones are short and low-volume — no music, and no sound on every button click or key press.
+
+### Rationale
+
+- Zero binary assets: a tiny footprint, nothing extra to host or cache-bust, and pitch/length are trivial to tune in code.
+- Web Audio gain envelopes make "subtle and short" easy and click-free.
+- Client-only — the server and gameplay logic are untouched. Sounds are side effects fired from `useGame`'s existing event handlers.
+
+### Trade-offs
+
+- Synth tones are less rich than designed samples; acceptable for subtle cues, and samples can be swapped in later behind the same `playSound()` API.
+- Trigger choices keep it from getting noisy: correct/wrong play only for the local player's own guess, your-turn on acquiring the turn, opponent-joined for the host, won/lost per outcome.
+
+---

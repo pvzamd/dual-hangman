@@ -38,9 +38,10 @@ dual-hangman/
 │   ├── public/
 │   └── src/
 │       ├── pages/           ← Home, CreateRoom, JoinRoom, Lobby, Game (all wired)
-│       ├── components/      ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure, GameChat
-│       ├── hooks/useGame.ts ← socket subscription + GameView + rematch + chat (Lobby & Game)
+│       ├── components/      ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure, GameChat, SoundToggle
+│       ├── hooks/useGame.ts ← socket subscription + GameView + rematch + chat; fires sound cues
 │       ├── lib/identity.ts  ← localStorage identity persistence (ADR-010)
+│       ├── lib/sound.ts     ← Web Audio sound effects + mute setting (ADR-013)
 │       ├── socket.ts        ← typed Socket.IO client singleton
 │       ├── App.tsx          ← routes
 │       ├── main.tsx         ← entry
@@ -203,6 +204,7 @@ At `game_over` the result screen shows the win/lose/forfeit banner, **both** rev
 
 - **Chat:** `chat_message { text }` is validated server-side with the shared `normalizeChatText` (trim, drop empty, cap at `MAX_CHAT_LENGTH`) and broadcast to the whole room as `chat_message { senderId, senderName, text }`. It is **ephemeral** — never stored (ADR-002); clients accumulate it in component state only. `lastActivityAt` is bumped on chat.
 - **Idle sweep:** `index.ts` runs `RoomManager.sweepIdleRooms()` on a 60-second `unref()`'d interval. Any room whose `lastActivityAt` is older than `ROOM_IDLE_TIMEOUT_MINUTES` is removed (clearing its grace timers), reclaiming memory from abandoned rooms — including the "ghost" a forfeit leaves behind. Active play keeps a room alive because every meaningful action bumps `lastActivityAt`.
+- **Sound (client-only, ADR-013):** `lib/sound.ts` synthesizes six short cues with the Web Audio API (no asset files). `useGame` fires them from existing event handlers — correct/wrong for your own guess, your-turn on acquiring the turn, opponent-joined for the host, won/lost per outcome. The audio context unlocks on the first user gesture (`App` listener) to satisfy autoplay rules; a `SoundToggle` mutes/unmutes (persisted in `localStorage`). The server and gameplay are untouched.
 
 ## Reconnection Strategy (lobby-level implemented in Phase 2)
 

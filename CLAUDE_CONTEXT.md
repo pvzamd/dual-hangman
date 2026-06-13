@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 12)
+> Last updated: 2026-06-13 (end of Session 13)
 
 ---
 
@@ -19,7 +19,7 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 **Phase 6 — Polish & Resilience (COMPLETE)**
 
-Everything through Phase 5 works (lobby → word setup → play → game over → rematch). Phase 6 added: **idle-room sweep** (`RoomManager.sweepIdleRooms` on a 60s `unref`'d interval in `index.ts`, reclaims rooms idle past `ROOM_IDLE_TIMEOUT_MINUTES`, including post-forfeit ghosts); **in-room chat** (`chat_message` live — shared `normalizeChatText` validates/caps, broadcast to the room, ephemeral; client `GameChat` is a sidebar on `lg` / stacked on mobile, in `useGame`); **responsive polish** (game screen `lg` two-column with chat sidebar; copy-room-code button in the lobby); **subtle animations** (letter reveal + game-over fade-in via keyframes in `index.css`, honouring `prefers-reduced-motion`). 57 Vitest tests; chat + sweep covered, chat smoke-tested over real sockets. Gameplay rules unchanged; socket contract only gained behavior on the already-defined `chat_message`. **Next: Phase 7 — Scoring & Multi-Round** (not started).
+Everything through Phase 5 works (lobby → word setup → play → game over → rematch). Phase 6 added: **idle-room sweep** (`RoomManager.sweepIdleRooms` on a 60s `unref`'d interval in `index.ts`, reclaims rooms idle past `ROOM_IDLE_TIMEOUT_MINUTES`, including post-forfeit ghosts); **in-room chat** (`chat_message` live — shared `normalizeChatText` validates/caps, broadcast to the room, ephemeral; client `GameChat` is a sidebar on `lg` / stacked on mobile, in `useGame`); **responsive polish** (game screen `lg` two-column with chat sidebar; copy-room-code button in the lobby); **subtle animations** (letter reveal + game-over fade-in via keyframes in `index.css`, honouring `prefers-reduced-motion`); and **sound effects** (`lib/sound.ts` — six short Web Audio cues fired from `useGame`, autoplay-unlocked on first gesture, mute toggle in `SoundToggle`; ADR-013). 57 Vitest tests; chat + sweep covered, chat smoke-tested over real sockets. Gameplay rules unchanged; socket contract only gained behavior on the already-defined `chat_message`. **Next: Phase 7 — Scoring & Multi-Round** (not started).
 
 ---
 
@@ -48,9 +48,10 @@ shared/src/words.ts         ← normalizeSecretWord (client + server validation)
 shared/src/chat.ts          ← normalizeChatText (trim/cap; client + server)
 client/src/socket.ts        ← typed client singleton (autoConnect: false)
 client/src/lib/identity.ts  ← localStorage identity (save/load/clear)
-client/src/hooks/useGame.ts ← socket subscription + GameView + rematch + chat (Lobby & Game)
+client/src/lib/sound.ts     ← Web Audio sound effects + mute setting (ADR-013)
+client/src/hooks/useGame.ts ← socket subscription + GameView + rematch + chat; fires sound cues
 client/src/pages/           ← Home, Create, Join, Lobby, Game — all wired
-client/src/components/       ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure, GameChat
+client/src/components/       ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure, GameChat, SoundToggle
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health, idle-room sweep interval
 server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
 server/src/socket/registerSocketHandlers.ts  ← all events live (lobby, word, guess, forfeit, rematch, chat)
@@ -77,9 +78,8 @@ npm run format       # prettier
 
 - [ ] Persistent score across rounds within a session
 - [ ] Best-of-N match config
-- [ ] (Optional, deferred from Phase 6) sound effects
 
-Full roadmap in `docs/ROADMAP.md`. Phase 7 needs a deliberate decision on where score state lives (still in-memory per ADR-002).
+Full roadmap in `docs/ROADMAP.md`. Phase 7 needs a deliberate decision on where score state lives (still in-memory per ADR-002). (Phase 6 is fully done — sound effects, the last optional item, shipped via ADR-013.)
 
 ---
 
@@ -100,6 +100,6 @@ Full roadmap in `docs/ROADMAP.md`. Phase 7 needs a deliberate decision on where 
 - TypeScript only; no plain JS in `src/` directories.
 - Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
 - Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: correct guess → guess again; wrong guess → turn passes; win by full reveal only (ADR-004 + ADR-009).
-- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-013).
+- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-014).
 - Follow the mandatory documentation maintenance rules in `START_HERE.md` §8 — tick `docs/PROGRESS.md`, append to `docs/SESSION_NOTES.md`, and refresh this file before ending a session.
 - Never commit `.env`; keep `.env.example` files current.
