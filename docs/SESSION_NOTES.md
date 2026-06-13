@@ -358,3 +358,25 @@ The game is feature-complete through Phase 7. Options: more real-device playtest
 If deploying: work through `MUST_FIX_BEFORE_DEPLOY.md`, then deploy per `docs/DEPLOYMENT.md`. Otherwise the game is complete for LAN/friends play; pick from `NICE_TO_HAVE_AFTER_DEPLOY.md` as desired.
 
 ---
+
+## Session 16 — 2026-06-14
+
+### Work Completed
+
+- **Documentation organization** (docs only — no code/gameplay/deployment changes). Cleaned the repository root.
+- Moved the three release-review docs from the root into `docs/` with `git mv` (history preserved): `RELEASE_READINESS.md`, `MUST_FIX_BEFORE_DEPLOY.md`, `NICE_TO_HAVE_AFTER_DEPLOY.md`. They are project artifacts, not entry points or tool-loaded files, so they don't belong at the root.
+- **Root now holds four Markdown files, each with a reason:** `README.md` (GitHub landing page), `START_HERE.md` (universal entry point), `CLAUDE.md` (Claude Code auto-loads `./CLAUDE.md`), `CLAUDE_CONTEXT.md` (volatile session snapshot paired with `CLAUDE.md`; step 3 of the onboarding workflow).
+- Updated all references: START_HERE doc-index rows now point to `docs/…`; the moved files' internal links de-prefixed (`docs/LOCAL_PLAYTESTING.md` → `LOCAL_PLAYTESTING.md`, `docs/DEPLOYMENT.md` → `DEPLOYMENT.md`); PROJECT_OVERVIEW's `../RELEASE_READINESS.md` → `RELEASE_READINESS.md`. Verified no broken `../` or `docs/` links remain.
+- Added a **"Layout rule" table** to START_HERE §5 documenting why each root file stays at root (the documentation-structure summary).
+- Left SESSION_NOTES' earlier (Session 15) mentions of these files as-is — they are append-only history and were accurate at the time.
+
+### Documentation structure (after cleanup)
+
+- **Root:** `README.md`, `START_HERE.md`, `CLAUDE.md`, `CLAUDE_CONTEXT.md`.
+- **docs/:** `ARCHITECTURE.md`, `DECISIONS.md`, `DEPLOYMENT.md`, `GAME_RULES.md`, `LOCAL_PLAYTESTING.md`, `PROGRESS.md`, `PROJECT_OVERVIEW.md`, `ROADMAP.md`, `SESSION_NOTES.md`, `RELEASE_READINESS.md`, `MUST_FIX_BEFORE_DEPLOY.md`, `NICE_TO_HAVE_AFTER_DEPLOY.md`.
+
+### Next Recommended Action
+
+Unchanged from Session 15 — the game is feature-complete; deploy (work `docs/MUST_FIX_BEFORE_DEPLOY.md` first) or pick a Nice-to-Have.
+
+---

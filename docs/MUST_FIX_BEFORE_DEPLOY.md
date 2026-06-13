@@ -1,6 +1,6 @@
 # Must Fix Before Deploy
 
-> Blockers for a **public, unattended internet deployment**. None are needed for LAN / friends-only play (see [docs/LOCAL_PLAYTESTING.md](docs/LOCAL_PLAYTESTING.md)).
+> Blockers for a **public, unattended internet deployment**. None are needed for LAN / friends-only play (see [LOCAL_PLAYTESTING.md](LOCAL_PLAYTESTING.md)).
 > These are configuration and one small safeguard — **no new features, no gameplay changes**. Full context in [RELEASE_READINESS.md](RELEASE_READINESS.md).
 
 Ordered by priority.
@@ -15,7 +15,7 @@ Ordered by priority.
 
 **Why:** When `VITE_SERVER_URL` is unset the client connects to `http://<page-host>:3001` (`client/src/socket.ts`) — correct for LAN, but a deployed HTTPS page **cannot** open an `http://`/`ws://` socket (mixed content), and the server usually isn't on `:3001` of the client's host.
 
-**Fix:** Build the client with `VITE_SERVER_URL=https://<your-server-domain>` so Socket.IO upgrades to **wss://**. Ensure the server sits behind the platform's TLS (Railway/Render/Fly terminate TLS for you). See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+**Fix:** Build the client with `VITE_SERVER_URL=https://<your-server-domain>` so Socket.IO upgrades to **wss://**. Ensure the server sits behind the platform's TLS (Railway/Render/Fly terminate TLS for you). See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## 3. Run exactly one server instance (no autoscaling)
 
