@@ -33,6 +33,18 @@ const io: GameServer = new Server<
 
 const roomManager = new RoomManager();
 
+// Periodically reclaim abandoned rooms (idle past ROOM_IDLE_TIMEOUT_MINUTES).
+// unref() so the timer never keeps the process alive on shutdown.
+const SWEEP_INTERVAL_MS = 60_000;
+setInterval(() => {
+  const removed = roomManager.sweepIdleRooms();
+  if (removed.length > 0) {
+    console.log(
+      `[server] swept ${removed.length} idle room(s): ${removed.map((r) => r.code).join(', ')}`,
+    );
+  }
+}, SWEEP_INTERVAL_MS).unref();
+
 io.on('connection', (socket) => {
   console.log(`[socket] connected: ${socket.id}`);
   registerSocketHandlers(io, socket, roomManager);

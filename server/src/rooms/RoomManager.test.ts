@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ROOM_CODE_LENGTH } from '@dual-hangman/shared';
+import { ROOM_CODE_LENGTH, ROOM_IDLE_TIMEOUT_MINUTES } from '@dual-hangman/shared';
 import { GameManager } from '../game/GameManager.js';
 import { RoomManager } from './RoomManager.js';
 
@@ -260,6 +260,35 @@ describe('RoomManager', () => {
       expect(joiner.secretWord).toBeNull();
       expect(host.wantsRematch).toBe(false);
       expect(joiner.wantsRematch).toBe(false);
+    });
+  });
+
+  describe('sweepIdleRooms', () => {
+    const IDLE_MS = ROOM_IDLE_TIMEOUT_MINUTES * 60_000;
+
+    it('removes rooms idle past the timeout and keeps fresh ones', () => {
+      const manager = new RoomManager();
+      const stale = manager.createRoom('Idle');
+      const fresh = manager.createRoom('Active');
+      const now = 1_000_000_000_000;
+      stale.lastActivityAt = now - IDLE_MS - 1;
+      fresh.lastActivityAt = now;
+
+      const removed = manager.sweepIdleRooms(now);
+
+      expect(removed.map((r) => r.code)).toEqual([stale.code]);
+      expect(manager.getRoom(stale.code)).toBeUndefined();
+      expect(manager.getRoom(fresh.code)).toBe(fresh);
+    });
+
+    it('keeps a room exactly at the threshold (only strictly older is swept)', () => {
+      const manager = new RoomManager();
+      const room = manager.createRoom('Edge');
+      const now = 1_000_000_000_000;
+      room.lastActivityAt = now - IDLE_MS; // exactly at cutoff, not past it
+
+      expect(manager.sweepIdleRooms(now)).toEqual([]);
+      expect(manager.getRoom(room.code)).toBe(room);
     });
   });
 });

@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import {
   ROOM_CODE_ALPHABET,
   ROOM_CODE_LENGTH,
+  ROOM_IDLE_TIMEOUT_MINUTES,
   type PlayerId,
   type RoomPhase,
 } from '@dual-hangman/shared';
@@ -238,8 +239,18 @@ export class RoomManager {
     this.graceTimers.delete(key);
   }
 
-  // TODO Phase 6: sweepIdleRooms() on an interval using
-  //   ROOM_IDLE_TIMEOUT_MINUTES and lastActivityAt.
+  /**
+   * Removes rooms with no activity for longer than ROOM_IDLE_TIMEOUT_MINUTES,
+   * reclaiming memory from abandoned rooms — including the "ghost" room a
+   * forfeit leaves behind once the winner moves on. Returns the removed rooms.
+   * `now` is injectable so tests don't depend on the wall clock.
+   */
+  sweepIdleRooms(now: number = Date.now()): Room[] {
+    const cutoffMs = ROOM_IDLE_TIMEOUT_MINUTES * 60_000;
+    const stale = [...this.rooms.values()].filter((room) => now - room.lastActivityAt > cutoffMs);
+    for (const room of stale) this.removeRoom(room.code);
+    return stale;
+  }
 
   private generateUniqueCode(): string {
     let code: string;

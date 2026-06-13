@@ -102,13 +102,14 @@
 - [x] Tests: `RoomManager.requestRematch` + `resetForRematch` lifecycle; roomView both-words reveal (51 total)
 - [x] Live smoke test: full rematch into a 2nd round, decline-by-leave → lobby, opponent-gone → unavailable → lobby
 
-## Phase 6 — Polish & Resilience
+## Phase 6 — Polish & Resilience ✅
 
-- [ ] In-game reconnection: grace expiry during `playing` forfeits (lobby-level reconnection shipped in Phase 2)
-- [ ] Idle room sweep
-- [ ] Chat sidebar
-- [ ] Animations
-- [ ] Responsive layout
+- [x] In-game forfeit on leave/grace-expiry during `playing` (shipped as a post-Phase-4 fix)
+- [x] Idle room sweep — `RoomManager.sweepIdleRooms` on a 60s interval reclaims abandoned/ghost rooms
+- [x] Chat sidebar — `chat_message` live; ephemeral broadcast, shared `normalizeChatText` (trim/cap); responsive `GameChat`
+- [x] Subtle animations — letter reveal + game-over fade-in; honours `prefers-reduced-motion`
+- [x] Responsive polish — chat sidebar on large screens / stacked on mobile; copy-room-code button in the lobby
+- [ ] Sound effects (optional — not implemented)
 
 ## Phase 7 — Scoring
 

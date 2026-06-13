@@ -54,6 +54,6 @@ A disconnected player has **60 seconds** to reconnect (the opponent sees a count
 
 Multi-round sessions will track a cumulative score. Wrong-guess statistics may feed into it. Rules TBD.
 
-## Chat / Communication (future — Phase 6)
+## Chat / Communication
 
-Players may send short messages via a sidebar chat during the game. Chat is optional and does not affect gameplay.
+Players may send short messages via the in-room chat during the game. Chat is optional, **ephemeral** (not stored anywhere), capped per message, and does not affect gameplay.

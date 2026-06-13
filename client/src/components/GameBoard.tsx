@@ -1,9 +1,10 @@
-import type { GameView } from '@dual-hangman/shared';
+import type { ChatBroadcastPayload, GameView } from '@dual-hangman/shared';
 import WordDisplay from './WordDisplay';
 import GuessedLetters from './GuessedLetters';
 import Keyboard from './Keyboard';
 import HangmanFigure from './HangmanFigure';
 import TurnIndicator from './TurnIndicator';
+import GameChat from './GameChat';
 
 interface Props {
   view: GameView;
@@ -13,8 +14,10 @@ interface Props {
   youRequestedRematch: boolean;
   opponentWantsRematch: boolean;
   rematchUnavailable: boolean;
+  messages: ChatBroadcastPayload[];
   onGuess: (letter: string) => void;
   onRematch: () => void;
+  onSendChat: (text: string) => void;
   onLeave: () => void;
 }
 
@@ -32,8 +35,10 @@ export default function GameBoard({
   youRequestedRematch,
   opponentWantsRematch,
   rematchUnavailable,
+  messages,
   onGuess,
   onRematch,
+  onSendChat,
   onLeave,
 }: Props) {
   const { you, opponent, yourBoard, opponentBoard, activePlayerId, phase } = view;
@@ -45,69 +50,83 @@ export default function GameBoard({
   const youWon = over && view.winnerId === you.id;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center gap-4 p-4">
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center gap-4 p-4 lg:max-w-5xl">
       <p className="text-xs tracking-widest text-slate-500">ROOM {view.roomCode}</p>
       <TurnIndicator view={view} opponentAway={opponentAway} graceSeconds={graceSeconds} />
 
-      {over && (
-        <section className="w-full space-y-4 rounded-xl bg-slate-800 p-6 text-center shadow-lg">
-          {!youWon && <HangmanFigure className="mx-auto text-slate-300" />}
+      <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
+        {/* Game column */}
+        <div className="flex flex-1 flex-col items-center gap-4">
+          {over && (
+            <section
+              className="w-full space-y-4 rounded-xl bg-slate-800 p-6 text-center shadow-lg"
+              style={{ animation: 'fadeIn 220ms ease-out' }}
+            >
+              {!youWon && <HangmanFigure className="mx-auto text-slate-300" />}
 
-          <div className="space-y-1">
-            <RevealedWord label="Your word" word={view.yourWordRevealed} />
-            <RevealedWord label={`${opponentName}'s word`} word={view.opponentWordRevealed} />
-          </div>
+              <div className="space-y-1">
+                <RevealedWord label="Your word" word={view.yourWordRevealed} />
+                <RevealedWord label={`${opponentName}'s word`} word={view.opponentWordRevealed} />
+              </div>
 
-          <RematchControls
-            opponentName={opponentName}
-            opponentAway={opponentAway}
-            rematchUnavailable={rematchUnavailable}
-            youRequestedRematch={youRequestedRematch}
-            opponentWantsRematch={opponentWantsRematch}
-            onRematch={onRematch}
-            onLeave={onLeave}
-          />
-        </section>
-      )}
+              <RematchControls
+                opponentName={opponentName}
+                opponentAway={opponentAway}
+                rematchUnavailable={rematchUnavailable}
+                youRequestedRematch={youRequestedRematch}
+                opponentWantsRematch={opponentWantsRematch}
+                onRematch={onRematch}
+                onLeave={onLeave}
+              />
+            </section>
+          )}
 
-      <section className="w-full space-y-3 rounded-xl bg-slate-800 p-5 shadow-lg">
-        <h2 className="text-center text-sm text-slate-400">
-          You are guessing{' '}
-          <span className="font-semibold text-slate-200">{opponentName}&apos;s</span> word
-        </h2>
-        <WordDisplay masked={yourBoard.maskedWord} />
-        <p className="text-center text-xs text-slate-500">
-          Wrong guesses: {yourBoard.wrongGuesses}
-        </p>
-        <GuessedLetters board={yourBoard} />
-      </section>
+          <section className="w-full space-y-3 rounded-xl bg-slate-800 p-5 shadow-lg">
+            <h2 className="text-center text-sm text-slate-400">
+              You are guessing{' '}
+              <span className="font-semibold text-slate-200">{opponentName}&apos;s</span> word
+            </h2>
+            <WordDisplay masked={yourBoard.maskedWord} />
+            <p className="text-center text-xs text-slate-500">
+              Wrong guesses: {yourBoard.wrongGuesses}
+            </p>
+            <GuessedLetters board={yourBoard} />
+          </section>
 
-      <section className="w-full space-y-3 rounded-xl bg-slate-800/60 p-5">
-        <h2 className="text-center text-sm text-slate-400">
-          <span className="font-semibold text-slate-200">{opponentName}</span> is guessing your word
-        </h2>
-        <WordDisplay masked={opponentBoard.maskedWord} />
-        <p className="text-center text-xs text-slate-500">
-          Wrong guesses: {opponentBoard.wrongGuesses}
-        </p>
-        <GuessedLetters board={opponentBoard} />
-      </section>
+          <section className="w-full space-y-3 rounded-xl bg-slate-800/60 p-5">
+            <h2 className="text-center text-sm text-slate-400">
+              <span className="font-semibold text-slate-200">{opponentName}</span> is guessing your
+              word
+            </h2>
+            <WordDisplay masked={opponentBoard.maskedWord} />
+            <p className="text-center text-xs text-slate-500">
+              Wrong guesses: {opponentBoard.wrongGuesses}
+            </p>
+            <GuessedLetters board={opponentBoard} />
+          </section>
 
-      {!over && (
-        <Keyboard board={yourBoard} disabled={!yourTurn || opponentAway} onGuess={onGuess} />
-      )}
+          {!over && (
+            <Keyboard board={yourBoard} disabled={!yourTurn || opponentAway} onGuess={onGuess} />
+          )}
 
-      {error && <p className="rounded-lg bg-red-900/40 px-3 py-2 text-sm text-red-300">{error}</p>}
+          {error && (
+            <p className="rounded-lg bg-red-900/40 px-3 py-2 text-sm text-red-300">{error}</p>
+          )}
 
-      {!over && (
-        <button
-          type="button"
-          onClick={onLeave}
-          className="text-sm text-slate-400 transition hover:text-red-300"
-        >
-          Leave game
-        </button>
-      )}
+          {!over && (
+            <button
+              type="button"
+              onClick={onLeave}
+              className="text-sm text-slate-400 transition hover:text-red-300"
+            >
+              Leave game
+            </button>
+          )}
+        </div>
+
+        {/* Chat — sidebar on large screens, stacked below on mobile */}
+        <GameChat messages={messages} youId={you.id} onSend={onSendChat} />
+      </div>
     </main>
   );
 }

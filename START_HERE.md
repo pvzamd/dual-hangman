@@ -15,13 +15,13 @@ Dual Hangman is a real-time two-player browser game. Each player sets a secret w
 
 ## 2. Current Status
 
-|                     |                                                                                                                                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Completed**       | Phases 0–5: foundation, scaffolding + typed contract, lobby (incl. reconnection), word setup, core gameplay, game over + rematch                                                                             |
-| **Current phase**   | **Phase 6 — Polish & Resilience** (not started)                                                                                                                                                              |
-| **Next task**       | Idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`), chat sidebar, animations, responsive layout; checklist in [docs/PROGRESS.md](docs/PROGRESS.md)                                                                |
-| **Working**         | A full game loop end-to-end: rooms, word setup, turn-based guessing (streaks, turn transfer, win-by-reveal), forfeit, game-over screen with both words + defeat figure, mutual-opt-in rematch; 51 unit tests |
-| **Not working yet** | Idle room sweep, chat, animations beyond basic, scoring (Phase 7)                                                                                                                                            |
+|                     |                                                                                                                                                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Completed**       | Phases 0–6: foundation, scaffolding, lobby (incl. reconnection), word setup, core gameplay, game over + rematch, polish & resilience                                                                                  |
+| **Current phase**   | **Phase 7 — Scoring & Multi-Round** (not started)                                                                                                                                                                     |
+| **Next task**       | Persistent score across rounds in a session; best-of-N config (see [docs/ROADMAP.md](docs/ROADMAP.md)). Or keep playtesting first.                                                                                    |
+| **Working**         | Full game loop + polish: rooms, word setup, turn-based guessing, forfeit, game over (both words + defeat figure), rematch, **in-room chat**, **idle-room sweep**, responsive layout, subtle animations; 57 unit tests |
+| **Not working yet** | Scoring/multi-round (Phase 7); sound effects (optional, deferred)                                                                                                                                                     |
 
 > Keep this table phase-accurate. Fine-grained, always-current state lives in [docs/PROGRESS.md](docs/PROGRESS.md) and [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md).
 

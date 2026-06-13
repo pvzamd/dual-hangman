@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
+  ChatBroadcastPayload,
   ErrorPayload,
   GameView,
   GameWonPayload,
@@ -22,8 +23,11 @@ export interface UseGameResult {
   youRequestedRematch: boolean;
   opponentWantsRematch: boolean;
   rematchUnavailable: boolean;
+  /** In-room chat (ephemeral; accumulates while this page is mounted). */
+  messages: ChatBroadcastPayload[];
   guess: (letter: string) => void;
   requestRematch: () => void;
+  sendChat: (text: string) => void;
   leave: () => void;
 }
 
@@ -49,6 +53,7 @@ export function useGame(roomCode: string | undefined): UseGameResult {
   const [youRequestedRematch, setYouRequestedRematch] = useState(false);
   const [opponentWantsRematch, setOpponentWantsRematch] = useState(false);
   const [rematchUnavailable, setRematchUnavailable] = useState(false);
+  const [messages, setMessages] = useState<ChatBroadcastPayload[]>([]);
 
   useEffect(() => {
     if (!hasValidIdentity || !identity) return;
@@ -86,6 +91,8 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     };
     const onRematchRequested = () => setOpponentWantsRematch(true);
     const onRematchUnavailable = () => setRematchUnavailable(true);
+    const onChatMessage = (msg: ChatBroadcastPayload) =>
+      setMessages((prev) => [...prev, msg].slice(-100)); // keep the last 100
     const onOpponentDisconnected = ({ graceSeconds: grace }: { graceSeconds: number }) => {
       setOpponentAway(true);
       setGraceSeconds(grace);
@@ -114,6 +121,7 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     socket.on('rematch_requested', onRematchRequested);
     socket.on('rematch_started', syncFromState);
     socket.on('rematch_unavailable', onRematchUnavailable);
+    socket.on('chat_message', onChatMessage);
     socket.on('opponent_disconnected', onOpponentDisconnected);
     socket.on('opponent_reconnected', onOpponentReconnected);
     socket.on('error_occurred', onError);
@@ -133,6 +141,7 @@ export function useGame(roomCode: string | undefined): UseGameResult {
       socket.off('rematch_requested', onRematchRequested);
       socket.off('rematch_started', syncFromState);
       socket.off('rematch_unavailable', onRematchUnavailable);
+      socket.off('chat_message', onChatMessage);
       socket.off('opponent_disconnected', onOpponentDisconnected);
       socket.off('opponent_reconnected', onOpponentReconnected);
       socket.off('error_occurred', onError);
@@ -151,6 +160,10 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     socket.emit('request_rematch');
   }, []);
 
+  const sendChat = useCallback((text: string) => {
+    socket.emit('chat_message', { text });
+  }, []);
+
   const leave = useCallback(() => {
     socket.emit('leave_room');
     clearIdentity();
@@ -166,8 +179,10 @@ export function useGame(roomCode: string | undefined): UseGameResult {
     youRequestedRematch,
     opponentWantsRematch,
     rematchUnavailable,
+    messages,
     guess,
     requestRematch,
+    sendChat,
     leave,
   };
 }

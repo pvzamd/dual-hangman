@@ -266,3 +266,28 @@ Playtest on real devices using `docs/LOCAL_PLAYTESTING.md`. When ready to resume
 Continue real-device playtesting (`docs/LOCAL_PLAYTESTING.md`). When ready to build again, begin **Phase 6 — Polish & Resilience**.
 
 ---
+
+## Session 12 — 2026-06-13
+
+### Work Completed
+
+- **Phase 6 — Polish & Resilience**, in the requested priority order. Gameplay rules unchanged; the socket contract only gained behavior on the already-defined `chat_message` (backward compatible — no new events).
+- **Idle room cleanup (resilience):** `RoomManager.sweepIdleRooms(now = Date.now())` removes rooms idle past `ROOM_IDLE_TIMEOUT_MINUTES` and returns them; `index.ts` runs it on a 60s `unref()`'d interval. This also reclaims the post-forfeit "ghost" room. `now` is injectable for tests.
+- **Chat sidebar:** implemented the `chat_message` handler (was a stub) — validates with the new shared `normalizeChatText` (trim, drop empty, cap at `MAX_CHAT_LENGTH = 200`) and broadcasts `{ senderId, senderName, text }` to the room; ephemeral (no storage). Client: `GameChat` component (message list + input, auto-scroll, own/opponent styling) wired through `useGame` (`messages` + `sendChat`) and `GamePage`.
+- **Responsive polish:** GameBoard is a single column on mobile and a two-column layout on `lg` with chat as a real sidebar (stacked below on small screens); container widened to `lg:max-w-5xl`.
+- **Small UX:** copy-room-code button in the lobby (graceful no-op when the clipboard API is unavailable over plain-LAN http).
+- **Subtle animations:** letter-reveal pop (`WordDisplay`, keyed so it plays once on reveal) and a game-over panel fade-in; keyframes in `index.css`, with a `prefers-reduced-motion` guard that neutralizes animations/transitions.
+- Tests up to 57 (+6): `RoomManager.sweepIdleRooms` (removes stale, keeps fresh, strict threshold) and `normalizeChatText` (trim/empty/cap/normal). Live chat smoke test over real sockets: broadcast to both with sender identity + trim, empty ignored, length capped at 200.
+- Docs synced: GAME_RULES (chat now present), ARCHITECTURE (module map + chat/idle-cleanup notes), PROGRESS + ROADMAP Phase 6 ticked, START_HERE status (now Phase 7 next), CLAUDE_CONTEXT. LOCAL_PLAYTESTING checklist gained a chat step.
+
+### Notes
+
+- No new ADR. Chat being ephemeral/broadcast-only is just ADR-002 (no DB) applied; idle sweep, responsive, and animations are features, not architectural decisions.
+- Sound effects (the one optional Phase 6 item) intentionally **not** implemented.
+- Did NOT touch: Phase 7 scoring, deployment, auth, databases, new game modes, or gameplay rules.
+
+### Next Recommended Action
+
+Playtest the polish on real devices. When ready, **Phase 7 — Scoring & Multi-Round** is next — start by deciding where session score state lives (still in-memory, per ADR-002).
+
+---

@@ -162,6 +162,12 @@ Gameplay
 [ ] Guessing out of turn is not possible / rejected
 [ ] Boards update live on BOTH devices
 [ ] Opponent's hidden letters are never visible
+[ ] Turn indicator is clearly readable on a phone (your turn vs theirs)
+
+Chat
+[ ] A message sent on one device appears on both
+[ ] Empty messages can't be sent; very long ones are capped
+[ ] Chat reads well on mobile (stacked) and on a wide screen (sidebar)
 
 Game over
 [ ] Solving the word ends the game on both devices

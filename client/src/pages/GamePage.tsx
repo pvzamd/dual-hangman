@@ -20,8 +20,10 @@ export default function GamePage() {
     youRequestedRematch,
     opponentWantsRematch,
     rematchUnavailable,
+    messages,
     guess,
     requestRematch,
+    sendChat,
     leave,
   } = useGame(roomCode);
 
@@ -57,8 +59,10 @@ export default function GamePage() {
       youRequestedRematch={youRequestedRematch}
       opponentWantsRematch={opponentWantsRematch}
       rematchUnavailable={rematchUnavailable}
+      messages={messages}
       onGuess={guess}
       onRematch={requestRematch}
+      onSendChat={sendChat}
       onLeave={handleLeave}
     />
   );

@@ -3,6 +3,7 @@ import {
   MAX_WORD_LENGTH,
   MIN_WORD_LENGTH,
   RECONNECT_GRACE_SECONDS,
+  normalizeChatText,
   normalizeSecretWord,
   type ErrorCode,
 } from '@dual-hangman/shared';
@@ -23,8 +24,8 @@ const GRACE_SECONDS = Number(process.env.RECONNECT_GRACE_SECONDS) || RECONNECT_G
 
 /**
  * Registers every event from the shared contract for one connection.
- * Lobby (Phase 2), word setup (Phase 3), and guessing (Phase 4) are live;
- * chat lands in Phase 6 (see docs/ROADMAP.md).
+ * All events are live: lobby (Phase 2), word setup (Phase 3), guessing +
+ * forfeit (Phase 4), rematch (Phase 5), and chat (Phase 6).
  */
 export function registerSocketHandlers(
   io: GameServer,
@@ -260,7 +261,24 @@ export function registerSocketHandlers(
     }
   });
 
-  socket.on('chat_message', () => notImplemented(socket, 'chat_message (Phase 6)'));
+  socket.on('chat_message', ({ text }) => {
+    const { roomCode, playerId } = socket.data;
+    const room = roomCode ? roomManager.getRoom(roomCode) : undefined;
+    const player = room && playerId ? roomManager.getPlayer(room, playerId) : undefined;
+    if (!room || !player) return; // not in a room — ignore silently
+
+    const clean = typeof text === 'string' ? normalizeChatText(text) : null;
+    if (!clean) return;
+
+    room.lastActivityAt = Date.now();
+    // Broadcast to the whole room (sender included) so both clients render from
+    // the same source. Chat is ephemeral — no persistence (ADR-002).
+    io.to(room.code).emit('chat_message', {
+      senderId: player.id,
+      senderName: player.name,
+      text: clean,
+    });
+  });
 }
 
 const GUESS_ERROR_MESSAGES: Record<string, string> = {
@@ -340,8 +358,4 @@ function invalidNameMessage(): string {
 
 function emitError(socket: GameSocket, code: ErrorCode, message: string): void {
   socket.emit('error_occurred', { code, message });
-}
-
-function notImplemented(socket: GameSocket, feature: string): void {
-  emitError(socket, 'NOT_IMPLEMENTED', `${feature} is not implemented yet.`);
 }

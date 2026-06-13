@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../hooks/useGame';
 import WordSetupForm from '../components/WordSetupForm';
@@ -54,6 +54,9 @@ export default function LobbyPage() {
         <p className="font-mono text-4xl font-bold tracking-[0.3em] text-emerald-400">
           {roomCode ?? '—'}
         </p>
+        {roomCode && (!view || view.phase === 'waiting_for_opponent') && (
+          <CopyCodeButton code={roomCode} />
+        )}
 
         <div className="space-y-2 text-left">
           <PlayerRow
@@ -84,6 +87,31 @@ export default function LobbyPage() {
         Leave room
       </button>
     </main>
+  );
+}
+
+function CopyCodeButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API needs a secure context (https/localhost); over plain LAN
+      // http it may be unavailable — fail silently, the code is shown above.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="mx-auto block rounded-lg bg-slate-700 px-4 py-1.5 text-sm font-medium transition hover:bg-slate-600"
+    >
+      {copied ? '✓ Copied!' : 'Copy code'}
+    </button>
   );
 }
 

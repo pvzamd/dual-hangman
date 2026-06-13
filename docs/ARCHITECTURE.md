@@ -38,19 +38,19 @@ dual-hangman/
 │   ├── public/
 │   └── src/
 │       ├── pages/           ← Home, CreateRoom, JoinRoom, Lobby, Game (all wired)
-│       ├── components/      ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure
-│       ├── hooks/useGame.ts ← socket subscription + GameView + rematch state (Lobby & Game)
+│       ├── components/      ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure, GameChat
+│       ├── hooks/useGame.ts ← socket subscription + GameView + rematch + chat (Lobby & Game)
 │       ├── lib/identity.ts  ← localStorage identity persistence (ADR-010)
 │       ├── socket.ts        ← typed Socket.IO client singleton
 │       ├── App.tsx          ← routes
 │       ├── main.tsx         ← entry
-│       └── index.css        ← Tailwind entry (@import 'tailwindcss')
+│       └── index.css        ← Tailwind entry + subtle keyframes (reveal, fadeIn)
 ├── server/                  @dual-hangman/server — Node backend
 │   └── src/
-│       ├── index.ts                         ← Express + Socket.IO bootstrap, /health
+│       ├── index.ts                         ← Express + Socket.IO bootstrap, /health, idle-room sweep interval
 │       ├── socket/types.ts                  ← GameServer/GameSocket generics + SocketData
-│       ├── socket/registerSocketHandlers.ts ← lobby + word-setup + guessing + forfeit + rematch; chat stubbed
-│       ├── rooms/RoomManager.ts             ← rooms, join/leave/forfeit/rematch, reconnect, grace timers
+│       ├── socket/registerSocketHandlers.ts ← all events live: lobby, word, guess, forfeit, rematch, chat
+│       ├── rooms/RoomManager.ts             ← rooms, join/leave/forfeit/rematch, reconnect, grace timers, idle sweep
 │       ├── rooms/roomView.ts                ← Room → client-safe GameView projection
 │       ├── game/GameManager.ts              ← round state + guessLetter + forfeit (turn rules, win detection)
 │       └── *.test.ts                        ← Vitest unit tests beside the code they cover
@@ -198,6 +198,11 @@ At `game_over` the result screen shows the win/lose/forfeit banner, **both** rev
 2. First requester → the opponent gets `rematch_requested` (their button becomes "Accept rematch"); the requester waits.
 3. Both opted in → `resetForRematch` clears words/flags/game and sets phase `word_setup`; both clients get `rematch_started` (state in word_setup) and navigate back to the lobby for a new round (turn re-randomised when both resubmit).
 4. If the opponent has already left, the requester gets `rematch_unavailable` and the room is reverted to `waiting_for_opponent` (the absent opponent removed), so a `state_sync` returns them to the lobby. Declining is just leaving — the remaining player reverts to the lobby the same way.
+
+### Chat & idle cleanup (Phase 6)
+
+- **Chat:** `chat_message { text }` is validated server-side with the shared `normalizeChatText` (trim, drop empty, cap at `MAX_CHAT_LENGTH`) and broadcast to the whole room as `chat_message { senderId, senderName, text }`. It is **ephemeral** — never stored (ADR-002); clients accumulate it in component state only. `lastActivityAt` is bumped on chat.
+- **Idle sweep:** `index.ts` runs `RoomManager.sweepIdleRooms()` on a 60-second `unref()`'d interval. Any room whose `lastActivityAt` is older than `ROOM_IDLE_TIMEOUT_MINUTES` is removed (clearing its grace timers), reclaiming memory from abandoned rooms — including the "ghost" a forfeit leaves behind. Active play keeps a room alive because every meaningful action bumps `lastActivityAt`.
 
 ## Reconnection Strategy (lobby-level implemented in Phase 2)
 

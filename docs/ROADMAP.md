@@ -55,14 +55,14 @@
 - [x] Client: cosmetic hangman defeat figure for the loser (ADR-009)
 - [x] Rematch flow back to `word_setup` — mutual opt-in, with decline/unavailable returning to the lobby (ADR-012)
 
-## Phase 6 — Polish & Resilience
+## Phase 6 — Polish & Resilience ✅
 
 - [x] In-game forfeit: leaving or grace-expiry during `playing` → opponent wins via `game_won` (`opponent_forfeit`) — shipped as a post-Phase-4 correctness fix (ADR-007)
-- [ ] Idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`)
-- [ ] Chat sidebar (`chat_message`)
-- [ ] Animations (letter reveal, hangman draw)
-- [ ] Responsive layout (mobile-friendly)
-- [ ] Sound effects (optional)
+- [x] Idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`) — periodic, reclaims abandoned/ghost rooms
+- [x] Chat sidebar (`chat_message`) — ephemeral, responsive
+- [x] Subtle animations (letter reveal, game-over fade-in; respects reduced-motion)
+- [x] Responsive polish (chat sidebar/stacked layout; copy-room-code)
+- [ ] Sound effects (optional — deferred)
 
 ## Phase 7 — Scoring & Multi-Round
 

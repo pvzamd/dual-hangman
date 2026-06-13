@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 11)
+> Last updated: 2026-06-13 (end of Session 12)
 
 ---
 
@@ -17,9 +17,9 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 ## Current Phase
 
-**Phase 5 — Game Over & Restart (COMPLETE)**
+**Phase 6 — Polish & Resilience (COMPLETE)**
 
-The full game loop works end-to-end (lobby → word setup → play → game over → rematch → repeat). At game over, both secret words are revealed (`yourWordRevealed` + `opponentWordRevealed`), the loser sees a cosmetic `HangmanFigure`, and a reason-aware banner covers win / loss / forfeit. **Rematch is mutual opt-in** (ADR-012): `request_rematch` → `rematch_requested` to the opponent → when both opt in, `RoomManager.resetForRematch` returns the room to `word_setup` and emits `rematch_started`. Declining = leaving (reverts to lobby); if the opponent is gone, `rematch_unavailable` reverts the requester to the lobby. Earlier phases intact: turn rules (ADR-009), forfeit on leave/disconnect during play. 51 Vitest tests; full rematch lifecycle smoke-tested over real sockets. `chat_message` remains a stub. **Next: Phase 6 — Polish & Resilience** (idle room sweep, chat, animations, responsive layout).
+Everything through Phase 5 works (lobby → word setup → play → game over → rematch). Phase 6 added: **idle-room sweep** (`RoomManager.sweepIdleRooms` on a 60s `unref`'d interval in `index.ts`, reclaims rooms idle past `ROOM_IDLE_TIMEOUT_MINUTES`, including post-forfeit ghosts); **in-room chat** (`chat_message` live — shared `normalizeChatText` validates/caps, broadcast to the room, ephemeral; client `GameChat` is a sidebar on `lg` / stacked on mobile, in `useGame`); **responsive polish** (game screen `lg` two-column with chat sidebar; copy-room-code button in the lobby); **subtle animations** (letter reveal + game-over fade-in via keyframes in `index.css`, honouring `prefers-reduced-motion`). 57 Vitest tests; chat + sweep covered, chat smoke-tested over real sockets. Gameplay rules unchanged; socket contract only gained behavior on the already-defined `chat_message`. **Next: Phase 7 — Scoring & Multi-Round** (not started).
 
 ---
 
@@ -45,15 +45,16 @@ shared/src/events.ts        ← typed socket contract (compile-time truth)
 shared/src/types.ts         ← GameView / BoardView / PlayerInfo / ErrorCode
 shared/src/constants.ts     ← word/name limits, room code charset, grace period
 shared/src/words.ts         ← normalizeSecretWord (client + server validation)
+shared/src/chat.ts          ← normalizeChatText (trim/cap; client + server)
 client/src/socket.ts        ← typed client singleton (autoConnect: false)
 client/src/lib/identity.ts  ← localStorage identity (save/load/clear)
-client/src/hooks/useGame.ts ← socket subscription + GameView + rematch state (Lobby & Game)
+client/src/hooks/useGame.ts ← socket subscription + GameView + rematch + chat (Lobby & Game)
 client/src/pages/           ← Home, Create, Join, Lobby, Game — all wired
-client/src/components/       ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure
-server/src/index.ts         ← Express + Socket.IO bootstrap, /health
+client/src/components/       ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure, GameChat
+server/src/index.ts         ← Express + Socket.IO bootstrap, /health, idle-room sweep interval
 server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
-server/src/socket/registerSocketHandlers.ts  ← lobby + word + guess + forfeit + rematch handlers; chat stub
-server/src/rooms/RoomManager.ts              ← rooms, join/leave/forfeit/rematch, reconnect, grace timers
+server/src/socket/registerSocketHandlers.ts  ← all events live (lobby, word, guess, forfeit, rematch, chat)
+server/src/rooms/RoomManager.ts              ← rooms, join/leave/forfeit/rematch, reconnect, grace timers, sweepIdleRooms
 server/src/rooms/roomView.ts                 ← Room → GameView projection (delegates to game)
 server/src/game/GameManager.ts               ← round state + guessLetter + forfeit (rules, win detection)
 ```
@@ -72,14 +73,13 @@ npm run format       # prettier
 
 ---
 
-## Outstanding Tasks (Phase 6 — Polish & Resilience)
+## Outstanding Tasks (Phase 7 — Scoring & Multi-Round; NOT started)
 
-- [ ] Idle room sweep — reclaim rooms idle past `ROOM_IDLE_TIMEOUT_MINUTES` (uses `lastActivityAt`; also cleans up post-forfeit ghost rooms)
-- [ ] Chat sidebar (`chat_message` is still a NOT_IMPLEMENTED stub)
-- [ ] Animations (letter reveal, hangman draw) and responsive/mobile layout
-- [ ] Optional: sound effects
+- [ ] Persistent score across rounds within a session
+- [ ] Best-of-N match config
+- [ ] (Optional, deferred from Phase 6) sound effects
 
-Then Phase 7 (scoring / multi-round). Full roadmap in `docs/ROADMAP.md`.
+Full roadmap in `docs/ROADMAP.md`. Phase 7 needs a deliberate decision on where score state lives (still in-memory per ADR-002).
 
 ---
 
@@ -87,9 +87,10 @@ Then Phase 7 (scoring / multi-round). Full roadmap in `docs/ROADMAP.md`.
 
 - Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
 - Claude Code harness quirks (npm.cmd etc.) live in `CLAUDE.md`.
-- Tests: server only so far (`npm run test` → 51 Vitest tests). No client tests yet.
+- Tests: server only so far (`npm run test` → 57 Vitest tests). No client tests yet.
 - In-game forfeit is wired through `handleExit` in the socket handler: `leave_room` and grace-timer expiry both forfeit during `playing` (opponent wins), and keep the revert/destroy behavior otherwise. Grace window is env-overridable (`RECONNECT_GRACE_SECONDS`, default 60).
-- Rematch reuses `word_setup` (no new phase). After a forfeit, the disconnected forfeiter is kept in the room → a lingering "ghost" room until the winner leaves or the (Phase 6) idle sweep reclaims it.
+- Rematch reuses `word_setup` (no new phase). Post-forfeit ghost rooms are now reclaimed by the idle sweep (60s interval, `ROOM_IDLE_TIMEOUT_MINUTES`).
+- Chat is ephemeral (no persistence) and broadcast to the room; the client `GameChat` only appears on the GamePage (playing/game_over), though the server accepts chat in any in-room phase.
 - **LAN playtesting works out of the box** (see `docs/LOCAL_PLAYTESTING.md`): Vite binds all interfaces (`host: true`), the client derives the socket URL from `window.location.hostname:3001`, and the server reflects the request origin for CORS when `CLIENT_ORIGIN` is unset. Set `CLIENT_ORIGIN` to lock CORS in production.
 
 ---
