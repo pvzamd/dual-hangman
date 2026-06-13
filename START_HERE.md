@@ -15,13 +15,13 @@ Dual Hangman is a real-time two-player browser game. Each player sets a secret w
 
 ## 2. Current Status
 
-|                     |                                                                                                                                                                                  |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Completed**       | Phases 0–3: foundation, scaffolding + typed contract, lobby (incl. basic reconnection), word setup                                                                               |
-| **Current phase**   | **Phase 4 — Core Gameplay** (not started)                                                                                                                                        |
-| **Next task**       | Implement `GameManager.guessLetter` per ADR-009 (correct guess keeps the turn, wrong passes it, win = full reveal) + guess UI; checklist in [docs/PROGRESS.md](docs/PROGRESS.md) |
-| **Working**         | Full lobby + word setup: rooms, sync, identity, reconnection, secret-word entry with ready states, transition to `playing` with personalized `game_started`; 24 unit tests       |
-| **Not working yet** | Guessing (`guess_letter` → `NOT_IMPLEMENTED`), game-over flow, chat                                                                                                              |
+|                     |                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Completed**       | Phases 0–4: foundation, scaffolding + typed contract, lobby (incl. basic reconnection), word setup, core gameplay                                                        |
+| **Current phase**   | **Phase 5 — Game Over & Restart** (not started)                                                                                                                          |
+| **Next task**       | Polish the game-over result screen, add the hangman defeat figure (cosmetic), and a rematch flow back to `word_setup`; checklist in [docs/PROGRESS.md](docs/PROGRESS.md) |
+| **Working**         | A full round end-to-end: rooms, word setup, turn-based guessing (streaks, turn transfer, win-by-reveal), live board + keyboard, basic game-over screen; 38 unit tests    |
+| **Not working yet** | Rematch, hangman defeat figure, in-game forfeit on leave/disconnect (Phase 6), chat                                                                                      |
 
 > Keep this table phase-accurate. Fine-grained, always-current state lives in [docs/PROGRESS.md](docs/PROGRESS.md) and [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md).
 
@@ -36,10 +36,11 @@ shared/   @dual-hangman/shared — game constants, state model (GameView),
           and the typed Socket.IO contract (events.ts). SOURCE-ONLY: no
           build step; Vite/tsx compile it in dev, tsup bundles it for prod.
 client/   React 19 + Vite + Tailwind 4 + react-router 7 SPA.
-          Pages: Home, Create, Join, Lobby. Typed socket singleton.
+          Pages: Home, Create, Join, Lobby, Game. useGame hook owns
+          the socket subscription + GameView. Typed socket singleton.
 server/   Node ≥22.12 + Express 5 + Socket.IO 4. /health endpoint,
           RoomManager (rooms, codes, reconnect tokens), GameManager
-          (rules engine — skeleton). tsx watch dev, tsup ESM build.
+          (turn rules + win detection). tsx watch dev, tsup ESM build.
 ```
 
 Two invariants everything else hangs on:
@@ -67,6 +68,7 @@ Full rationale and trade-offs in [docs/DECISIONS.md](docs/DECISIONS.md).
 | 008 | Node ≥ 22.12 baseline (dev on Node 24 LTS)                                                                                                                  |
 | 009 | **Win by full reveal only** — correct guess continues the turn, wrong guess passes it; no loss by wrong guesses; hangman figure is the cosmetic loss visual |
 | 010 | Lobby sync = `reconnect_player` → `state_sync` on every connect; leaving a two-player lobby reverts the room to waiting instead of destroying it            |
+| 011 | Dedicated `/game` route + shared `useGame` hook with phase-driven navigation; `game_won` reveals each player's own target word                              |
 
 ---
 

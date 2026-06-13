@@ -19,8 +19,8 @@ const JOIN_FAILURE_MESSAGES: Record<string, string> = {
 
 /**
  * Registers every event from the shared contract for one connection.
- * Lobby events (create/join/leave/reconnect) are live as of Phase 2;
- * word/guess/chat land in Phases 3, 4, and 6 (see docs/ROADMAP.md).
+ * Lobby (Phase 2), word setup (Phase 3), and guessing (Phase 4) are live;
+ * chat lands in Phase 6 (see docs/ROADMAP.md).
  */
 export function registerSocketHandlers(
   io: GameServer,
@@ -163,9 +163,63 @@ export function registerSocketHandlers(
     }
   });
 
-  socket.on('guess_letter', () => notImplemented(socket, 'guess_letter (Phase 4)'));
+  socket.on('guess_letter', ({ letter }) => {
+    const { roomCode, playerId } = socket.data;
+    const room = roomCode ? roomManager.getRoom(roomCode) : undefined;
+    const player = room && playerId ? roomManager.getPlayer(room, playerId) : undefined;
+    if (!room || !player || !room.game || room.phase !== 'playing') {
+      return emitError(socket, 'INVALID_PHASE', 'There is no game in progress.');
+    }
+
+    const outcome = room.game.guessLetter(player.id, typeof letter === 'string' ? letter : '');
+    if (!outcome.ok) {
+      return emitError(socket, outcome.error, GUESS_ERROR_MESSAGES[outcome.error]);
+    }
+    room.lastActivityAt = Date.now();
+
+    if (room.game.isOver) {
+      room.phase = 'game_over';
+      // Personalized: game_won state reveals each player's own target word.
+      for (const p of room.players) {
+        if (p.socketId) {
+          io.to(p.socketId).emit('game_won', {
+            winnerId: room.game.winnerId!,
+            reason: room.game.gameOverReason!,
+            state: buildRoomView(room, p.id),
+          });
+        }
+      }
+      return;
+    }
+
+    // guess_result carries the full refreshed view — the single source the UI
+    // re-renders from. Personalized so each side sees its own boards.
+    for (const p of room.players) {
+      if (p.socketId) {
+        io.to(p.socketId).emit('guess_result', {
+          guesserId: player.id,
+          letter: outcome.letter,
+          correct: outcome.correct,
+          state: buildRoomView(room, p.id),
+        });
+      }
+    }
+
+    // Turn only moves on a wrong guess (correct guesses keep the streak).
+    if (outcome.turnPassed) {
+      io.to(room.code).emit('turn_changed', { activePlayerId: room.game.activePlayerId });
+    }
+  });
+
   socket.on('chat_message', () => notImplemented(socket, 'chat_message (Phase 6)'));
 }
+
+const GUESS_ERROR_MESSAGES: Record<string, string> = {
+  NOT_YOUR_TURN: "It's not your turn.",
+  ALREADY_GUESSED: 'You already guessed that letter.',
+  INVALID_LETTER: 'Guess a single letter A–Z.',
+  INVALID_PHASE: 'The game is not in progress.',
+};
 
 function bindSocket(
   socket: GameSocket,

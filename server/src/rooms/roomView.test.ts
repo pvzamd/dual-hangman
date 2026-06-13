@@ -55,10 +55,41 @@ describe('buildRoomView', () => {
     expect(joinerView.yourBoard?.maskedWord).toHaveLength(7);
     expect(joinerView.opponentBoard?.maskedWord).toHaveLength(3);
 
+    // No reveal mid-game...
+    expect(hostView.opponentWordRevealed).toBeNull();
+    expect(joinerView.opponentWordRevealed).toBeNull();
+
     // Anti-cheat: no view ever contains a raw secret word.
     expect(JSON.stringify(hostView)).not.toContain('LIONESS');
     expect(JSON.stringify(hostView)).not.toContain('OIL');
     expect(JSON.stringify(joinerView)).not.toContain('OIL');
     expect(JSON.stringify(joinerView)).not.toContain('LIONESS');
+  });
+
+  it('reveals each player their own target word at game over', () => {
+    const { room, host, joiner } = twoPlayerRoom();
+    host.secretWord = 'LIONESS';
+    joiner.secretWord = 'OIL';
+    room.game = new GameManager(
+      { playerId: host.id, secretWord: host.secretWord },
+      { playerId: joiner.id, secretWord: joiner.secretWord },
+    );
+    room.phase = 'playing';
+
+    // Drive the active player to a win, then flip the room to game_over.
+    const winner = room.game.activePlayerId;
+    const target = room.game.targetWordFor(winner);
+    for (const letter of new Set(target.split(''))) {
+      room.game.guessLetter(winner, letter);
+    }
+    room.phase = 'game_over';
+
+    // Each side's reveal is the word THEY were guessing (their own target).
+    const hostView = buildRoomView(room, host.id);
+    const joinerView = buildRoomView(room, joiner.id);
+    expect(hostView.opponentWordRevealed).toBe(room.game.targetWordFor(host.id));
+    expect(joinerView.opponentWordRevealed).toBe(room.game.targetWordFor(joiner.id));
+    // The winner's side is fully solved either way.
+    expect(buildRoomView(room, winner).yourBoard?.solved).toBe(true);
   });
 });

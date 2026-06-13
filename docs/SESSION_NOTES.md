@@ -148,3 +148,30 @@ Begin **Phase 3 — Word Setup**: implement `submit_secret_word` (validate with 
 Begin **Phase 4 — Core Gameplay** (read ADR-009 first): `GameManager.guessLetter` with turn streaks (correct → guess again, wrong → pass), `guess_result` / `turn_changed` / `game_won` emission, forfeit handling at the two TODO call sites, `opponentWordRevealed` at game over, and the guessing UI (likely a GamePage with keyboard + boards).
 
 ---
+
+## Session 7 — 2026-06-13
+
+### Work Completed
+
+- **Phase 4 (Core Gameplay) complete.** Reviewed GAME_RULES.md first; implementation matches it exactly.
+- Server `GameManager.guessLetter` (discriminated `GuessOutcome`): rejects game-over (`INVALID_PHASE`), invalid letters (`INVALID_LETTER`), out-of-turn (`NOT_YOUR_TURN`), and repeats (`ALREADY_GUESSED`) — rejections leave state untouched and never consume the turn. Correct guess reveals every occurrence and keeps the turn (streak); wrong guess increments `wrongGuesses` (stats only) and passes the turn; win is `word_solved` only. Added `targetWordFor` and `isOver`.
+- `roomView.buildRoomView` now reveals each player's own target word at `game_over` via `opponentWordRevealed`.
+- `guess_letter` handler: validates, applies, then emits personalized `guess_result` (or `game_won` on a win) to each socket, plus `turn_changed` to the room **only when the turn passed**.
+- Client: `useGame(roomCode)` hook owns the socket subscription + `GameView` (shared by Lobby and Game pages; missing-identity ejection derived during render to satisfy the new `react-hooks/set-state-in-effect` lint rule). New `GamePage` + `GameBoard`, `WordDisplay`, `GuessedLetters`, on-screen `Keyboard` (guessed letters disabled/tinted, physical typing). New `/game/:roomCode` route; LobbyPage navigates there on `playing`, GamePage bounces back on a pre-game phase.
+- Tests up to 38: comprehensive `guessLetter` coverage (streaks, wrong-guess turn pass, repeat/out-of-turn/invalid/after-over rejections, per-board repeat tracking, lowercase normalization, full-reveal win) and a roomView game-over reveal test. Helpers read `activePlayerId` so they're deterministic despite the random first turn.
+- Live smoke test over real sockets: correct-keeps-turn (no `turn_changed`), wrong-passes-turn (`turn_changed` → opponent), `NOT_YOUR_TURN`, `ALREADY_GUESSED`, solve → `game_won` (winner + reason + loser's revealed word), `INVALID_PHASE` after game over, no secret leaked.
+
+### Decisions Made This Session
+
+- **ADR-011**: dedicated `/game` route + shared `useGame` hook with phase-driven navigation; `game_won` reveals each player's own target word.
+- `turn_changed` is emitted only on wrong guesses; the client re-renders from the full `state` in `guess_result` / `game_won`, so the event is supplementary.
+
+### Known Gap (intentionally deferred)
+
+Leaving or disconnecting past grace **during `playing`** still reverts the room instead of forfeiting (TODOs in `RoomManager.leaveRoom` and the `disconnect` handler). This is wrong per the rules and is scheduled for **Phase 6** (it was out of this phase's scope). Lobby-phase leave/reconnect is correct.
+
+### Next Recommended Action
+
+Begin **Phase 5 — Game Over & Restart**: polish the result screen, add the cosmetic hangman defeat figure for the loser (ADR-009), and a rematch flow back to `word_setup` (new `rematch` event + GameManager reset). `GameBoard` already renders a basic game-over state to build on.
+
+---

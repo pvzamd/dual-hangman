@@ -223,6 +223,30 @@ Node 18 (previous dev machine default) is end-of-life and below the minimum for 
 ### Trade-offs
 
 - `reconnect_player` is semantically overloaded (it is also the "give me my state" request). Accepted for protocol economy; rename to `resume_session` later if it confuses.
-- During `playing` (Phase 4), leave/grace-expiry must forfeit (`game_won`) instead of reverting — marked as TODOs at both call sites.
+- During `playing`, leave/grace-expiry must forfeit (`game_won`) instead of reverting — deferred to Phase 6, marked as TODOs at both call sites.
+
+---
+
+## ADR-011 — Dedicated GamePage + Shared `useGame` Hook; Reveal Words at Game Over
+
+**Date:** 2026-06-13 (Phase 4)  
+**Status:** Accepted
+
+### Decision
+
+1. Gameplay lives on its own route `/game/:roomCode` (GamePage), separate from `/lobby/:roomCode`. A shared `useGame(roomCode)` hook owns the socket subscription and the latest `GameView` for both pages.
+2. Navigation is phase-driven: LobbyPage navigates to the game once the synced phase reaches `playing`; GamePage bounces back to the lobby if it sees a pre-game phase. The two phase sets are disjoint, so there is no redirect loop.
+3. `game_won` reveals each player their own target word via `GameView.opponentWordRevealed` — the loser finally sees the word they could not finish; the winner's board is already fully solved.
+
+### Rationale
+
+- A dedicated route matches the documented component hierarchy and keeps each page's render simple (lobby concerns vs board concerns).
+- Extracting `useGame` removes duplication: both pages need the identical subscribe-and-resync-on-`connect` logic (ADR-010). One hook, one source of truth.
+- Re-emitting `reconnect_player` on mount means navigating Lobby→Game — or a refresh that lands on the wrong route — always resyncs to authoritative state, so the brief unmount/remount can never strand the UI on stale data.
+
+### Trade-offs
+
+- Two routes for one session means a quick unmount/remount on game start; acceptable because the mount-time resync makes it stateless.
+- Revealing the word at game over is arguably Phase 5 (result screen) territory, but the data belongs in `game_won`'s state and costs nothing. The polished result screen, hangman defeat figure, and rematch remain Phase 5.
 
 ---

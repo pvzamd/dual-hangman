@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage';
 import CreateRoomPage from './pages/CreateRoomPage';
 import JoinRoomPage from './pages/JoinRoomPage';
 import LobbyPage from './pages/LobbyPage';
+import GamePage from './pages/GamePage';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/create" element={<CreateRoomPage />} />
         <Route path="/join" element={<JoinRoomPage />} />
         <Route path="/lobby/:roomCode" element={<LobbyPage />} />
+        <Route path="/game/:roomCode" element={<GamePage />} />
       </Routes>
     </div>
   );

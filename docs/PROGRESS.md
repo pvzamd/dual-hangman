@@ -64,16 +64,22 @@
 - [x] Tests: word validation, GameManager init, roomView projection incl. anti-cheat assertion (24 total)
 - [x] Live smoke test: validation, ready flow, resync mid-setup, game start, no word leakage, mid-game reconnect
 
-## Phase 4 — Core Gameplay
+## Phase 4 — Core Gameplay ✅
 
-- [ ] `guessLetter`: turn enforcement — correct guess continues turn, wrong guess passes it (ADR-009)
-- [ ] Wrong-guess counting (statistics only — no penalty)
-- [ ] Win detection (`word_solved` only)
-- [ ] `buildViewFor` per-player projection
-- [ ] `useGame` hook
-- [ ] Word display (blanks + revealed letters)
-- [ ] On-screen keyboard with disabled guessed letters
-- [ ] Live board sync + turn indicator
+- [x] `GameManager.guessLetter`: turn enforcement — correct guess continues turn, wrong guess passes it (ADR-009)
+- [x] Repeat-guess handling — `ALREADY_GUESSED`, per-board, does not consume the turn
+- [x] Board reveal — every occurrence of a correct letter; invalid/out-of-turn rejections leave state untouched
+- [x] Wrong-guess counting (statistics only — no penalty)
+- [x] Win detection (`word_solved` only); `game_won` reveals each player's own target word
+- [x] Server handler: `guess_letter` → personalized `guess_result`, `turn_changed` (wrong guesses only), `game_won`
+- [x] `useGame` hook owning the socket subscription + `GameView` (shared by Lobby and Game pages)
+- [x] `GamePage` + `GameBoard`: both boards live, turn indicator, game-over result
+- [x] `WordDisplay`, `GuessedLetters`, on-screen `Keyboard` (guessed letters disabled/tinted, physical typing)
+- [x] Live board sync; LobbyPage navigates to `/game/:roomCode` on `playing`
+- [x] Tests: comprehensive GameManager/roomView gameplay coverage (38 total)
+- [x] Live smoke test: streaks, wrong-guess turn pass, repeat/out-of-turn/invalid rejections, win, mid-game reconnect
+
+> Deferred to later phases by design: hangman defeat figure + rematch (Phase 5); in-game forfeit on leave/grace-expiry (Phase 6).
 
 ## Phase 5 — Game Over & Restart
 

@@ -40,15 +40,14 @@
 - [x] Client: secret word form in lobby with inline validation + ready badges
 - [x] `GameView` gained `yourWordReady`/`opponentWordReady` so refresh mid-setup restores correctly
 
-## Phase 4 — Core Gameplay
+## Phase 4 — Core Gameplay ✅
 
-- [ ] Server: `GameManager.guessLetter` — turn enforcement; correct guess = same player continues, wrong guess = turn passes (ADR-009)
-- [ ] Server: win detection — `word_solved` only (no loss by wrong guesses)
-- [ ] Server: emit `guess_result`, `turn_changed` (only on wrong guesses), `game_won`
-- [ ] Server: `GameManager.buildViewFor` — per-player `GameView` projection
-- [ ] Client: `useGame` hook owning socket subscription + `GameView`
-- [ ] Client: word display, on-screen keyboard (guessed letters disabled), wrong-guess stats counter
-- [ ] Client: both boards update live; clear your-turn / their-turn indicator
+- [x] Server: `GameManager.guessLetter` — turn enforcement; correct guess = same player continues, wrong guess = turn passes (ADR-009)
+- [x] Server: win detection — `word_solved` only (no loss by wrong guesses); `game_won` reveals each player's target word
+- [x] Server: emit `guess_result`, `turn_changed` (only on wrong guesses), `game_won`
+- [x] Client: `useGame` hook owning socket subscription + `GameView` (shared by Lobby/Game pages)
+- [x] Client: `GamePage` + `GameBoard`, `WordDisplay`, `GuessedLetters`, on-screen `Keyboard` (guessed letters disabled), wrong-guess stats counter
+- [x] Client: both boards update live; clear your-turn / their-turn indicator; navigate to game on `playing`
 
 ## Phase 5 — Game Over & Restart
 

@@ -28,6 +28,8 @@ export function buildRoomView(room: Room, playerId: PlayerId): GameView {
     activePlayerId: game ? game.activePlayerId : null,
     winnerId: game ? game.winnerId : null,
     gameOverReason: game ? game.gameOverReason : null,
-    opponentWordRevealed: null, // TODO Phase 5: reveal at game over
+    // At game over, reveal the word THIS player was guessing (their target) —
+    // the loser finally sees the word they could not finish.
+    opponentWordRevealed: game && room.phase === 'game_over' ? game.targetWordFor(you.id) : null,
   };
 }

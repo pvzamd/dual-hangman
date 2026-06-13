@@ -29,8 +29,8 @@ Dual Hangman is a real-time two-player browser game where players guess each oth
 
 ## Current Status
 
-**Phase 3 — Word Setup (complete)**
+**Phase 4 — Core Gameplay (complete)**
 
-Lobby and word setup work end-to-end: rooms, sync, identity, reconnection, validated secret-word entry with ready states, and the transition to `playing` with personalized `game_started` payloads (random first turn). Server logic carries 24 Vitest tests. **Core gameplay (guessing) is next** — Phase 4, governed by ADR-009.
+A full round is playable: turn-based letter guessing with correct-guess streaks, turn transfer on a wrong guess, repeat/out-of-turn/invalid rejections, and win-by-full-reveal (ADR-009), all enforced server-side. The client has the live game board, on-screen keyboard, guessed-letter display, and turn indicator. Server logic carries 38 Vitest tests. **Game-over polish and rematch are next** — Phase 5 (result screen, hangman defeat figure, rematch flow).
 
 See [ROADMAP.md](ROADMAP.md) for upcoming phases and [PROGRESS.md](PROGRESS.md) for fine-grained task tracking.

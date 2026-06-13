@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 6)
+> Last updated: 2026-06-13 (end of Session 7)
 
 ---
 
@@ -17,9 +17,9 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 ## Current Phase
 
-**Phase 3 — Word Setup (COMPLETE)**
+**Phase 4 — Core Gameplay (COMPLETE)**
 
-Lobby and word setup work end-to-end: players submit validated secret words (shared `normalizeSecretWord`), ready states live in `GameView` and survive refresh, and when both words are in the room transitions to `playing` — GameManager is constructed (boards over each other's words, random first turn) and each player gets a personalized `game_started`. 24 Vitest tests; all flows smoke-tested over real sockets. `guess_letter` / `chat_message` remain stubs. **Next: Phase 4 — Core Gameplay** (read ADR-009 first; see PROGRESS.md).
+A full round is playable end-to-end. `GameManager.guessLetter` enforces all rules (ADR-009): correct guess reveals every occurrence and keeps the turn (streak); wrong guess counts for stats only and passes the turn; repeats/out-of-turn/invalid are rejected without touching state; win is `word_solved` only. The server emits personalized `guess_result` / `game_won` and `turn_changed` (wrong guesses only); `game_won` reveals each player's own target word. Client: `useGame` hook + `GamePage`/`GameBoard`/`WordDisplay`/`GuessedLetters`/`Keyboard`; LobbyPage navigates to `/game/:roomCode` on `playing`. 38 Vitest tests; full round smoke-tested over real sockets. `chat_message` remains a stub. **Next: Phase 5 — Game Over & Restart** (result screen, hangman defeat figure, rematch).
 
 ---
 
@@ -47,14 +47,15 @@ shared/src/constants.ts     ← word/name limits, room code charset, grace perio
 shared/src/words.ts         ← normalizeSecretWord (client + server validation)
 client/src/socket.ts        ← typed client singleton (autoConnect: false)
 client/src/lib/identity.ts  ← localStorage identity (save/load/clear)
-client/src/pages/           ← Home, Create, Join, Lobby — all wired to the socket
-client/src/components/WordSetupForm.tsx      ← secret word entry (word_setup phase)
+client/src/hooks/useGame.ts ← socket subscription + GameView (Lobby & Game pages)
+client/src/pages/           ← Home, Create, Join, Lobby, Game — all wired
+client/src/components/       ← WordSetupForm, GameBoard, WordDisplay, GuessedLetters, Keyboard
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health
 server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
-server/src/socket/registerSocketHandlers.ts  ← lobby + word handlers live; guess/chat stubs
+server/src/socket/registerSocketHandlers.ts  ← lobby + word + guess handlers live; chat stub
 server/src/rooms/RoomManager.ts              ← rooms, join/leave, reconnect, grace timers
 server/src/rooms/roomView.ts                 ← Room → GameView projection (delegates to game)
-server/src/game/GameManager.ts               ← round state: boards, first turn (guessing = Phase 4)
+server/src/game/GameManager.ts               ← round state + guessLetter (turn rules, win detection)
 ```
 
 ---
@@ -71,16 +72,13 @@ npm run format       # prettier
 
 ---
 
-## Outstanding Tasks (Phase 4 — Core Gameplay; read ADR-009 first)
+## Outstanding Tasks (Phase 5 — Game Over & Restart)
 
-- [ ] `GameManager.guessLetter(playerId, letter)`: NOT_YOUR_TURN / ALREADY_GUESSED guards; correct guess reveals + same player continues; wrong guess increments stats + passes turn; win = word fully revealed (`word_solved` only)
-- [ ] Emit `guess_result` (with refreshed GameView), `turn_changed` (wrong guesses only), `game_won`
-- [ ] Forfeit on leave/grace-expiry during `playing` (TODOs at both call sites in RoomManager/handlers)
-- [ ] Reveal loser's unsolved target word at game over (`opponentWordRevealed`)
-- [ ] Client: `useGame` hook, word displays, on-screen keyboard (disable guessed letters), turn indicator, wrong-guess stats counter
-- [ ] Tests: guess flow, turn streaks, win detection, forfeit
+- [ ] Result screen polish (winner, reason, revealed words, wrong-guess stats) — basic game-over state already renders in `GameBoard`
+- [ ] Hangman defeat figure as the loser's visual (cosmetic — ADR-009)
+- [ ] Rematch flow back to `word_setup` (needs a new `rematch` event + GameManager reset)
 
-Then Phase 5 (result screen + rematch). Full roadmap in `docs/ROADMAP.md`.
+Deferred to Phase 6: forfeit on leave/grace-expiry during `playing` (TODOs in RoomManager + the disconnect handler), idle room sweep, chat. Full roadmap in `docs/ROADMAP.md`.
 
 ---
 
@@ -88,9 +86,9 @@ Then Phase 5 (result screen + rematch). Full roadmap in `docs/ROADMAP.md`.
 
 - Dev machine uses nvm-windows; project needs Node ≥ 22.12 (`nvm use 24`). Other projects on this machine may pin older Node versions.
 - Claude Code harness quirks (npm.cmd etc.) live in `CLAUDE.md`.
-- Tests: server only so far (`npm run test` → 24 Vitest tests). No client tests yet.
-- `leaveRoom` + grace-expiry currently revert/destroy the room — both call sites carry a TODO to forfeit instead during `playing` (Phase 4). Mid-game leave currently reverts the room, which is WRONG per the rules — fix in Phase 4.
-- LobbyPage shows "Guessing arrives in Phase 4" once the game starts — that status string is the Phase 4 UI starting point (likely becomes a GamePage).
+- Tests: server only so far (`npm run test` → 38 Vitest tests). No client tests yet.
+- **Known gap (Phase 6):** leaving or disconnecting past grace during `playing` reverts the room instead of forfeiting — WRONG per the rules. TODOs sit in `RoomManager.leaveRoom` and the `disconnect` handler. Lobby-phase leave/reconnect is correct.
+- `GameBoard` already renders a basic game-over state (winner + revealed word); the polished result screen, hangman figure, and rematch are Phase 5.
 
 ---
 
@@ -99,6 +97,6 @@ Then Phase 5 (result screen + rematch). Full roadmap in `docs/ROADMAP.md`.
 - TypeScript only; no plain JS in `src/` directories.
 - Socket events: snake_case, defined ONLY in `shared/src/events.ts`; both sides get them via Socket.IO generics. Update `docs/ARCHITECTURE.md` tables when the contract changes.
 - Game rule changes go to `docs/GAME_RULES.md` first (source of truth). Turn model: correct guess → guess again; wrong guess → turn passes; win by full reveal only (ADR-004 + ADR-009).
-- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-011).
+- Significant choices get an ADR in `docs/DECISIONS.md` (next: ADR-012).
 - Follow the mandatory documentation maintenance rules in `START_HERE.md` §8 — tick `docs/PROGRESS.md`, append to `docs/SESSION_NOTES.md`, and refresh this file before ending a session.
 - Never commit `.env`; keep `.env.example` files current.

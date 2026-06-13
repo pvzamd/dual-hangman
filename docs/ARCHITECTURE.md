@@ -1,6 +1,6 @@
 # Architecture
 
-> Implemented in Phase 1. The socket contract here mirrors `shared/src/events.ts` — that file is the compile-time truth; keep this document in sync with it.
+> Phases 1–4 implemented (scaffolding → lobby → word setup → core gameplay). The socket contract here mirrors `shared/src/events.ts` — that file is the compile-time truth; keep this document in sync with it.
 
 ## High-Level Overview
 
@@ -37,8 +37,9 @@ dual-hangman/
 ├── client/                  @dual-hangman/client — React SPA
 │   ├── public/
 │   └── src/
-│       ├── pages/           ← HomePage, CreateRoomPage, JoinRoomPage, LobbyPage (wired)
-│       ├── components/      ← WordSetupForm (secret word entry, inline validation)
+│       ├── pages/           ← Home, CreateRoom, JoinRoom, Lobby, Game (all wired)
+│       ├── components/      ← WordSetupForm, GameBoard, WordDisplay, GuessedLetters, Keyboard
+│       ├── hooks/useGame.ts ← socket subscription + GameView (shared by Lobby & Game pages)
 │       ├── lib/identity.ts  ← localStorage identity persistence (ADR-010)
 │       ├── socket.ts        ← typed Socket.IO client singleton
 │       ├── App.tsx          ← routes
@@ -48,10 +49,10 @@ dual-hangman/
 │   └── src/
 │       ├── index.ts                         ← Express + Socket.IO bootstrap, /health
 │       ├── socket/types.ts                  ← GameServer/GameSocket generics + SocketData
-│       ├── socket/registerSocketHandlers.ts ← lobby + word-setup handlers live; guess/chat stubbed
+│       ├── socket/registerSocketHandlers.ts ← lobby + word-setup + guessing handlers live; chat stubbed
 │       ├── rooms/RoomManager.ts             ← rooms, join/leave, reconnect, grace timers
 │       ├── rooms/roomView.ts                ← Room → client-safe GameView projection
-│       ├── game/GameManager.ts              ← round state: boards, random first turn (guessing = Phase 4)
+│       ├── game/GameManager.ts              ← round state + guessLetter (turn enforcement, win detection)
 │       └── *.test.ts                        ← Vitest unit tests beside the code they cover
 └── docs/
 ```
@@ -61,9 +62,9 @@ dual-hangman/
 ## Frontend
 
 - **Stack:** React 19, TypeScript, Vite, Tailwind CSS 4 (via `@tailwindcss/vite`), react-router-dom 7.
-- **Routes:** `/` (home), `/create`, `/join`, `/lobby/:roomCode`. Game and result screens are added in Phases 3–5.
+- **Routes:** `/` (home), `/create`, `/join`, `/lobby/:roomCode` (waiting + word setup), `/game/:roomCode` (play + game over).
 - **Socket client:** `src/socket.ts` exports one `Socket<ServerToClientEvents, ClientToServerEvents>` singleton with `autoConnect: false`; flows that need the server call `socket.connect()`.
-- **State management:** local component state for now. When gameplay lands (Phase 4), a single `useGame` hook will own the socket subscription and the latest `GameView`; the server's full-state payloads (`state_sync`, `guess_result.state`) keep client state a pure projection — no client-side rule logic.
+- **State management:** the `useGame(roomCode)` hook owns the socket subscription and the latest `GameView`; LobbyPage and GamePage both consume it. The server's full-state payloads (`state_sync`, `game_started.state`, `guess_result.state`, `game_won.state`) keep client state a pure projection — **no rule logic on the client**. LobbyPage navigates to `/game/:roomCode` once the synced phase reaches `playing`; GamePage bounces back if it sees a pre-game phase, so the two never show the wrong screen (even after a refresh mid-game).
 
 ## Backend
 
@@ -99,7 +100,7 @@ create_room ──► waiting_for_opponent
                      │ both submit_secret_word │ rematch (Phase 5)
                      ▼                       │
                  playing                     │
-                     │ win / hang / forfeit  │
+                     │ word solved / forfeit │
                      ▼                       │
                  game_over ──────────────────┘
 ```
@@ -175,7 +176,15 @@ Clients only ever receive `GameView` — a per-player projection built by `build
 3. First submission notifies the opponent (`opponent_word_ready`); every accepted submission acks the submitter with `state_sync`.
 4. When both words are in: a `GameManager` is constructed (boards over each other's words, random first turn via `crypto.randomInt`), phase flips to `playing`, and each player receives a **personalized** `game_started`.
 
-**Anti-cheat invariant:** the opponent's unsolved word never appears in any payload. Guess validation, turn order, and win detection are exclusively server-side.
+### Guessing flow (Phase 4)
+
+1. Client emits `guess_letter { letter }`. The on-screen keyboard already disables guessed letters and disables itself off-turn, but the server is the authority.
+2. `GameManager.guessLetter` validates and applies the guess, returning a discriminated outcome. Rejections (`NOT_YOUR_TURN`, `ALREADY_GUESSED`, `INVALID_LETTER`, `INVALID_PHASE`) leave all state untouched and surface as `error_occurred`.
+3. **Correct:** every occurrence of the letter is revealed and the **same player keeps the turn** (streak). **Wrong:** `wrongGuesses` increments (stats only) and the turn passes.
+4. If the guess revealed the last hidden letter → `winnerId`/`word_solved` set, phase flips to `game_over`, and both players get a personalized `game_won` (whose state reveals each player's own target word via `opponentWordRevealed`).
+5. Otherwise the server emits a personalized `guess_result` to each player, plus `turn_changed` to the room **only when the turn passed** (wrong guess). The client re-renders purely from the `state` in these payloads.
+
+**Anti-cheat invariant:** the opponent's unsolved word never appears in any payload. Guess validation, turn order, and win detection are exclusively server-side; the masked board exposes only revealed letters until game over.
 
 ## Reconnection Strategy (lobby-level implemented in Phase 2)
 
@@ -183,6 +192,6 @@ Clients only ever receive `GameView` — a per-player projection built by `build
 2. On disconnect, the server marks the player `connected: false`, starts a `RECONNECT_GRACE_SECONDS` (60s) timer, and notifies the opponent (`opponent_disconnected`).
 3. The reconnecting client emits `reconnect_player` with its stored credentials. The server validates the token, rebinds the new socket, cancels the timer, replies with `state_sync`, and notifies the opponent (`opponent_reconnected`).
 4. The lobby page uses the **same path as its mount-time sync** (ADR-010): it emits `reconnect_player` on every socket `connect`, so refresh, navigation, and transient drops all converge on `state_sync`.
-5. Grace expiry in lobby phases removes the player — the room reverts to `waiting_for_opponent` (or is destroyed if empty). **TODO Phase 4:** expiry during `playing` must forfeit (`game_won` with `opponent_forfeit`) instead.
+5. Grace expiry in lobby phases removes the player — the room reverts to `waiting_for_opponent` (or is destroyed if empty). **TODO Phase 6:** expiry (or an explicit leave) during `playing` must forfeit (`game_won` with `opponent_forfeit`) instead of reverting.
 
 Game state lives only in server memory, so a **server** restart still ends all games (accepted — ADR-002).

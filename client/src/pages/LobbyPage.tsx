@@ -1,106 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type {
-  ErrorPayload,
-  GameView,
-  OpponentJoinedPayload,
-  StateSyncPayload,
-} from '@dual-hangman/shared';
-import { socket } from '../socket';
-import { clearIdentity, loadIdentity } from '../lib/identity';
+import { useGame } from '../hooks/useGame';
 import WordSetupForm from '../components/WordSetupForm';
 
 /**
- * Lobby sync model (ADR-010): on mount we always emit reconnect_player with
- * the stored identity and render from the server's state_sync reply. The same
- * path covers fresh navigation, page refresh, and socket auto-reconnects —
- * the socket's 'connect' event re-triggers the sync.
+ * Pre-game screen: waiting for an opponent, then secret-word setup. Shares the
+ * useGame hook with GamePage; once the synced state reaches `playing`, it
+ * navigates to the dedicated game screen.
  */
 export default function LobbyPage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const navigate = useNavigate();
-  const [view, setView] = useState<GameView | null>(null);
-  const [opponentAway, setOpponentAway] = useState(false);
-  const [graceSeconds, setGraceSeconds] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const { view, opponentAway, graceSeconds, error, ejected, leave } = useGame(roomCode);
 
   useEffect(() => {
-    const identity = loadIdentity();
-    if (!roomCode || !identity || identity.roomCode !== roomCode) {
-      navigate('/', { replace: true });
-      return;
+    if (ejected) navigate('/', { replace: true });
+  }, [ejected, navigate]);
+
+  useEffect(() => {
+    if (view && (view.phase === 'playing' || view.phase === 'game_over')) {
+      navigate(`/game/${roomCode}`, { replace: true });
     }
-
-    const requestSync = () => {
-      socket.emit('reconnect_player', {
-        roomCode: identity.roomCode,
-        playerId: identity.playerId,
-        reconnectToken: identity.reconnectToken,
-      });
-    };
-    const onStateSync = ({ state }: StateSyncPayload) => {
-      setView(state);
-      setOpponentAway(false);
-    };
-    const onOpponentJoined = ({ opponent }: OpponentJoinedPayload) => {
-      setView((v) => (v ? { ...v, opponent } : v));
-      setOpponentAway(false);
-    };
-    const onWordSetupStarted = () => {
-      setView((v) => (v ? { ...v, phase: 'word_setup' } : v));
-    };
-    const onOpponentWordReady = () => {
-      setView((v) => (v ? { ...v, opponentWordReady: true } : v));
-    };
-    const onGameStarted = ({ state }: StateSyncPayload) => {
-      setView(state);
-      setOpponentAway(false);
-    };
-    const onOpponentDisconnected = ({ graceSeconds: grace }: { graceSeconds: number }) => {
-      setOpponentAway(true);
-      setGraceSeconds(grace);
-    };
-    const onOpponentReconnected = () => {
-      setOpponentAway(false);
-      setView((v) => (v?.opponent ? { ...v, opponent: { ...v.opponent, connected: true } } : v));
-    };
-    const onError = ({ code, message }: ErrorPayload) => {
-      if (code === 'RECONNECT_REJECTED') {
-        clearIdentity();
-        navigate('/', { replace: true });
-        return;
-      }
-      setError(message);
-    };
-
-    socket.on('state_sync', onStateSync);
-    socket.on('opponent_joined', onOpponentJoined);
-    socket.on('word_setup_started', onWordSetupStarted);
-    socket.on('opponent_word_ready', onOpponentWordReady);
-    socket.on('game_started', onGameStarted);
-    socket.on('opponent_disconnected', onOpponentDisconnected);
-    socket.on('opponent_reconnected', onOpponentReconnected);
-    socket.on('error_occurred', onError);
-    socket.on('connect', requestSync);
-    socket.connect();
-    if (socket.connected) requestSync();
-
-    return () => {
-      socket.off('state_sync', onStateSync);
-      socket.off('opponent_joined', onOpponentJoined);
-      socket.off('word_setup_started', onWordSetupStarted);
-      socket.off('opponent_word_ready', onOpponentWordReady);
-      socket.off('game_started', onGameStarted);
-      socket.off('opponent_disconnected', onOpponentDisconnected);
-      socket.off('opponent_reconnected', onOpponentReconnected);
-      socket.off('error_occurred', onError);
-      socket.off('connect', requestSync);
-    };
-  }, [roomCode, navigate]);
+  }, [view, roomCode, navigate]);
 
   function handleLeave() {
-    socket.emit('leave_room');
-    clearIdentity();
+    leave();
     navigate('/');
   }
 
@@ -116,11 +40,7 @@ export default function LobbyPage() {
               ? 'Both words locked in — starting…'
               : 'Word locked in. Waiting for your opponent…'
             : 'Choose the word your opponent must guess.'
-          : view.phase === 'playing'
-            ? `Game on! ${
-                view.activePlayerId === view.you.id ? 'You go' : `${view.opponent?.name} goes`
-              } first. Guessing arrives in Phase 4.`
-            : `Phase: ${view.phase}`;
+          : 'Starting game…';
 
   const showWordForm = view?.phase === 'word_setup' && !view.yourWordReady && !opponentAway;
 
