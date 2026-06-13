@@ -8,10 +8,13 @@ import type { GameServer, SocketData } from './socket/types.js';
 import { RoomManager } from './rooms/RoomManager.js';
 
 const PORT = Number(process.env.PORT ?? 3001);
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
+// CLIENT_ORIGIN locks CORS to one origin in production. When unset (local dev
+// and LAN playtesting) we reflect the request origin so any device on the
+// network can connect without per-IP configuration. See docs/LOCAL_PLAYTESTING.md.
+const corsOrigin: string | boolean = process.env.CLIENT_ORIGIN ?? true;
 
 const app = express();
-app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(cors({ origin: corsOrigin }));
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
@@ -25,7 +28,7 @@ const io: GameServer = new Server<
   Record<string, never>,
   SocketData
 >(httpServer, {
-  cors: { origin: CLIENT_ORIGIN },
+  cors: { origin: corsOrigin },
 });
 
 const roomManager = new RoomManager();
@@ -35,7 +38,11 @@ io.on('connection', (socket) => {
   registerSocketHandlers(io, socket, roomManager);
 });
 
+// listen() with no host binds all interfaces, so the server is reachable on
+// the LAN at http://<host-ip>:PORT as well as localhost.
 httpServer.listen(PORT, () => {
-  console.log(`[server] listening on http://localhost:${PORT}`);
-  console.log(`[server] allowing CORS origin ${CLIENT_ORIGIN}`);
+  console.log(`[server] listening on http://localhost:${PORT} (also on this machine's LAN IP)`);
+  console.log(
+    `[server] CORS origin: ${typeof corsOrigin === 'string' ? corsOrigin : 'reflect any (dev/LAN)'}`,
+  );
 });

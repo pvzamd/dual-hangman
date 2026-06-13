@@ -71,7 +71,7 @@ dual-hangman/
 - **Stack:** Node.js ≥ 22.12 (developed on 24), Express 5, Socket.IO 4, TypeScript.
 - **Dev workflow:** `tsx watch src/index.ts` (restart on change). **Build:** `tsup` → single ESM file `dist/index.js`. **Run:** `node dist/index.js`.
 - **HTTP surface:** `GET /health` → `{ "status": "ok" }`. Everything else is Socket.IO.
-- **Env:** `PORT` (default 3001), `CLIENT_ORIGIN` (default `http://localhost:5173`, used for CORS).
+- **Env:** `PORT` (default 3001); `CLIENT_ORIGIN` locks CORS in production, and when unset reflects the request origin so local/LAN devices connect without config (see `docs/LOCAL_PLAYTESTING.md`). The HTTP server binds all interfaces, so it is reachable at `http://<host-ip>:PORT` on the LAN.
 
 ### Server-side models
 

@@ -223,3 +223,26 @@ Unchanged: begin **Phase 5 — Game Over & Restart** (result screen polish, hang
 Begin **Phase 6 — Polish & Resilience**: idle room sweep (`ROOM_IDLE_TIMEOUT_MINUTES`, also reclaims post-forfeit ghost rooms), chat sidebar (`chat_message` is still stubbed), animations, and responsive/mobile layout.
 
 ---
+
+## Session 10 — 2026-06-13
+
+### Work Completed
+
+- **LAN playtesting support** (no gameplay/architecture/roadmap changes; Phase 6 not started). Three isolated config changes made LAN play work with zero per-session config:
+  - `client/vite.config.ts`: `server.host: true` so Vite binds all interfaces and prints a Network URL other devices can open.
+  - `client/src/socket.ts`: default the socket server URL to `http://${window.location.hostname}:3001` (was `http://localhost:3001`), so opening the client by host IP connects the socket to the same host. `VITE_SERVER_URL` still overrides.
+  - `server/src/index.ts`: CORS origin defaults to reflecting the request origin (`process.env.CLIENT_ORIGIN ?? true`) so LAN origins are accepted; `CLIENT_ORIGIN` still locks it in production. Startup log updated; noted that `listen()` already binds all interfaces.
+- New doc **`docs/LOCAL_PLAYTESTING.md`**: start commands, finding the host IP, opening from a phone, required config (none), Windows Firewall, Socket.IO troubleshooting table, multiplayer verification steps, and a full copy-paste checklist.
+- Synced docs: `server/.env.example` (CLIENT_ORIGIN now commented/optional with explanation), DEPLOYMENT.md env table, ARCHITECTURE.md backend env line, START_HERE doc index, README (dev section + docs table).
+- Verified: format, typecheck, lint, 51 tests, builds; plus a CORS smoke check confirming a LAN origin is reflected in `Access-Control-Allow-Origin`.
+
+### Notes
+
+- No new ADR: these are dev-server/CORS config conveniences, not architectural decisions. Production still locks CORS via `CLIENT_ORIGIN`.
+- Gameplay, the socket contract, and the roadmap are untouched.
+
+### Next Recommended Action
+
+Playtest on real devices using `docs/LOCAL_PLAYTESTING.md`. When ready to resume building, begin **Phase 6 — Polish & Resilience**.
+
+---

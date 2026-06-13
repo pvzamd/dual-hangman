@@ -35,7 +35,7 @@ npm install          # installs all three workspaces
 npm run dev          # client on :5173 + server on :3001, concurrently
 ```
 
-Open `http://localhost:5173` in two browser tabs (or two browsers) to play locally once gameplay lands.
+Open `http://localhost:5173` in two browser tabs (or two browsers) to play locally. To play from a **second device (phone/tablet) on the same Wi-Fi**, see [docs/LOCAL_PLAYTESTING.md](docs/LOCAL_PLAYTESTING.md) — it works out of the box via the Vite "Network" URL.
 
 ### Other commands
 
@@ -68,18 +68,19 @@ dual-hangman/
 
 ## Documentation
 
-| File                                                 | Purpose                                           |
-| ---------------------------------------------------- | ------------------------------------------------- |
-| [START_HERE.md](START_HERE.md)                       | **Entry point** — doc map, workflow, AI handoff   |
-| [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) | Goals, tech choices, status                       |
-| [docs/GAME_RULES.md](docs/GAME_RULES.md)             | Source of truth for game rules                    |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)         | System design, socket contract, models, lifecycle |
-| [docs/ROADMAP.md](docs/ROADMAP.md)                   | Planned phases and future features                |
-| [docs/PROGRESS.md](docs/PROGRESS.md)                 | Checkbox progress tracker                         |
-| [docs/SESSION_NOTES.md](docs/SESSION_NOTES.md)       | Development log by session                        |
-| [docs/DECISIONS.md](docs/DECISIONS.md)               | Architectural decision records (ADRs)             |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)             | Hosting and environment variable guide            |
-| [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md)               | AI session continuity context                     |
+| File                                                   | Purpose                                           |
+| ------------------------------------------------------ | ------------------------------------------------- |
+| [START_HERE.md](START_HERE.md)                         | **Entry point** — doc map, workflow, AI handoff   |
+| [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)   | Goals, tech choices, status                       |
+| [docs/GAME_RULES.md](docs/GAME_RULES.md)               | Source of truth for game rules                    |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | System design, socket contract, models, lifecycle |
+| [docs/ROADMAP.md](docs/ROADMAP.md)                     | Planned phases and future features                |
+| [docs/PROGRESS.md](docs/PROGRESS.md)                   | Checkbox progress tracker                         |
+| [docs/SESSION_NOTES.md](docs/SESSION_NOTES.md)         | Development log by session                        |
+| [docs/DECISIONS.md](docs/DECISIONS.md)                 | Architectural decision records (ADRs)             |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | Hosting and environment variable guide            |
+| [docs/LOCAL_PLAYTESTING.md](docs/LOCAL_PLAYTESTING.md) | Run locally + play from a 2nd device on the LAN   |
+| [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md)                 | AI session continuity context                     |
 
 ---
 

@@ -90,6 +90,7 @@ Then Phase 7 (scoring / multi-round). Full roadmap in `docs/ROADMAP.md`.
 - Tests: server only so far (`npm run test` → 51 Vitest tests). No client tests yet.
 - In-game forfeit is wired through `handleExit` in the socket handler: `leave_room` and grace-timer expiry both forfeit during `playing` (opponent wins), and keep the revert/destroy behavior otherwise. Grace window is env-overridable (`RECONNECT_GRACE_SECONDS`, default 60).
 - Rematch reuses `word_setup` (no new phase). After a forfeit, the disconnected forfeiter is kept in the room → a lingering "ghost" room until the winner leaves or the (Phase 6) idle sweep reclaims it.
+- **LAN playtesting works out of the box** (see `docs/LOCAL_PLAYTESTING.md`): Vite binds all interfaces (`host: true`), the client derives the socket URL from `window.location.hostname:3001`, and the server reflects the request origin for CORS when `CLIENT_ORIGIN` is unset. Set `CLIENT_ORIGIN` to lock CORS in production.
 
 ---
 

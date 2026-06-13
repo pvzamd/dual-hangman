@@ -13,11 +13,11 @@ Runtime requirement: **Node ≥ 22.12** (see ADR-008).
 
 ### Server (`server/.env.example`)
 
-| Variable                  | Required   | Default                 | Description                                                   |
-| ------------------------- | ---------- | ----------------------- | ------------------------------------------------------------- |
-| `PORT`                    | No         | `3001`                  | Port the Express/Socket.IO server listens on                  |
-| `CLIENT_ORIGIN`           | Yes (prod) | `http://localhost:5173` | CORS allowed origin (e.g. `https://dual-hangman.vercel.app`)  |
-| `RECONNECT_GRACE_SECONDS` | No         | `60`                    | Seconds a disconnected player may reconnect before forfeiting |
+| Variable                  | Required   | Default            | Description                                                                                                              |
+| ------------------------- | ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `PORT`                    | No         | `3001`             | Port the Express/Socket.IO server listens on                                                                             |
+| `CLIENT_ORIGIN`           | Yes (prod) | reflect any origin | CORS lock (e.g. `https://dual-hangman.vercel.app`). Unset reflects the request origin — fine for dev/LAN, set it in prod |
+| `RECONNECT_GRACE_SECONDS` | No         | `60`               | Seconds a disconnected player may reconnect before forfeiting                                                            |
 
 ### Client (`client/.env.example`)
 
