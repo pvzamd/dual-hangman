@@ -246,3 +246,23 @@ Begin **Phase 6 — Polish & Resilience**: idle room sweep (`ROOM_IDLE_TIMEOUT_M
 Playtest on real devices using `docs/LOCAL_PLAYTESTING.md`. When ready to resume building, begin **Phase 6 — Polish & Resilience**.
 
 ---
+
+## Session 11 — 2026-06-13
+
+### Work Completed
+
+- **Playtest feedback: improved turn visibility** (presentation only — no gameplay/contract/roadmap changes).
+- New `client/src/components/TurnIndicator.tsx`: a prominent, mobile-first, **sticky** top banner that always states whose turn it is via a high-contrast color block + bold label + a live (animated) dot — so turn ownership no longer relies on the keyboard's disabled state. States: **Your turn** (solid emerald), **{opponent}'s turn / Waiting for {name}…** (muted slate), opponent-disconnected countdown (amber), and win/lose at game over (emerald/red). `role="status"` + `aria-live="polite"` announces changes to screen readers.
+- `GameBoard` now renders `TurnIndicator` in place of the old single-line header banner; removed the now-unused `banner`/`byForfeit` locals (the indicator derives all of it from `view`). The keyboard's disabled-when-not-your-turn behavior is unchanged.
+- Synced docs: ARCHITECTURE module map (added TurnIndicator/HangmanFigure and the forfeit/rematch handler notes), CLAUDE_CONTEXT component list.
+- Verified: format, typecheck, lint, 51 tests, builds.
+
+### Notes
+
+- No new ADR (pure UI/presentation). Gameplay logic, the socket contract, and the roadmap are untouched; Phase 6 not started.
+
+### Next Recommended Action
+
+Continue real-device playtesting (`docs/LOCAL_PLAYTESTING.md`). When ready to build again, begin **Phase 6 — Polish & Resilience**.
+
+---

@@ -38,8 +38,8 @@ dual-hangman/
 │   ├── public/
 │   └── src/
 │       ├── pages/           ← Home, CreateRoom, JoinRoom, Lobby, Game (all wired)
-│       ├── components/      ← WordSetupForm, GameBoard, WordDisplay, GuessedLetters, Keyboard
-│       ├── hooks/useGame.ts ← socket subscription + GameView (shared by Lobby & Game pages)
+│       ├── components/      ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure
+│       ├── hooks/useGame.ts ← socket subscription + GameView + rematch state (Lobby & Game)
 │       ├── lib/identity.ts  ← localStorage identity persistence (ADR-010)
 │       ├── socket.ts        ← typed Socket.IO client singleton
 │       ├── App.tsx          ← routes
@@ -49,10 +49,10 @@ dual-hangman/
 │   └── src/
 │       ├── index.ts                         ← Express + Socket.IO bootstrap, /health
 │       ├── socket/types.ts                  ← GameServer/GameSocket generics + SocketData
-│       ├── socket/registerSocketHandlers.ts ← lobby + word-setup + guessing handlers live; chat stubbed
-│       ├── rooms/RoomManager.ts             ← rooms, join/leave, reconnect, grace timers
+│       ├── socket/registerSocketHandlers.ts ← lobby + word-setup + guessing + forfeit + rematch; chat stubbed
+│       ├── rooms/RoomManager.ts             ← rooms, join/leave/forfeit/rematch, reconnect, grace timers
 │       ├── rooms/roomView.ts                ← Room → client-safe GameView projection
-│       ├── game/GameManager.ts              ← round state + guessLetter (turn enforcement, win detection)
+│       ├── game/GameManager.ts              ← round state + guessLetter + forfeit (turn rules, win detection)
 │       └── *.test.ts                        ← Vitest unit tests beside the code they cover
 └── docs/
 ```

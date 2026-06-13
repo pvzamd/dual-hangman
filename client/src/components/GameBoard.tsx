@@ -3,6 +3,7 @@ import WordDisplay from './WordDisplay';
 import GuessedLetters from './GuessedLetters';
 import Keyboard from './Keyboard';
 import HangmanFigure from './HangmanFigure';
+import TurnIndicator from './TurnIndicator';
 
 interface Props {
   view: GameView;
@@ -42,40 +43,11 @@ export default function GameBoard({
   const over = phase === 'game_over';
   const yourTurn = phase === 'playing' && activePlayerId === you.id;
   const youWon = over && view.winnerId === you.id;
-  const byForfeit = view.gameOverReason === 'opponent_forfeit';
-
-  const banner = over
-    ? youWon
-      ? byForfeit
-        ? `You win — ${opponentName} left the game.`
-        : 'You win! 🎉 You revealed their word first.'
-      : byForfeit
-        ? 'Game over — you left the game.'
-        : `${opponentName} revealed your word first.`
-    : opponentAway
-      ? `${opponentName} disconnected — ${graceSeconds}s to reconnect…`
-      : yourTurn
-        ? 'Your turn — guess a letter.'
-        : `${opponentName}'s turn…`;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center gap-6 p-4">
-      <header className="w-full text-center">
-        <p className="text-xs tracking-widest text-slate-500">ROOM {view.roomCode}</p>
-        <p
-          className={`mt-1 text-lg font-semibold ${
-            over
-              ? youWon
-                ? 'text-emerald-400'
-                : 'text-red-300'
-              : yourTurn
-                ? 'text-emerald-400'
-                : 'text-slate-300'
-          }`}
-        >
-          {banner}
-        </p>
-      </header>
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center gap-4 p-4">
+      <p className="text-xs tracking-widest text-slate-500">ROOM {view.roomCode}</p>
+      <TurnIndicator view={view} opponentAway={opponentAway} graceSeconds={graceSeconds} />
 
       {over && (
         <section className="w-full space-y-4 rounded-xl bg-slate-800 p-6 text-center shadow-lg">

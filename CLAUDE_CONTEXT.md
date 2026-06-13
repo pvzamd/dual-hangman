@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 9)
+> Last updated: 2026-06-13 (end of Session 11)
 
 ---
 
@@ -49,7 +49,7 @@ client/src/socket.ts        ← typed client singleton (autoConnect: false)
 client/src/lib/identity.ts  ← localStorage identity (save/load/clear)
 client/src/hooks/useGame.ts ← socket subscription + GameView + rematch state (Lobby & Game)
 client/src/pages/           ← Home, Create, Join, Lobby, Game — all wired
-client/src/components/       ← WordSetupForm, GameBoard, WordDisplay, GuessedLetters, Keyboard, HangmanFigure
+client/src/components/       ← WordSetupForm, GameBoard, TurnIndicator, WordDisplay, GuessedLetters, Keyboard, HangmanFigure
 server/src/index.ts         ← Express + Socket.IO bootstrap, /health
 server/src/socket/types.ts  ← GameServer/GameSocket generics + SocketData
 server/src/socket/registerSocketHandlers.ts  ← lobby + word + guess + forfeit + rematch handlers; chat stub
