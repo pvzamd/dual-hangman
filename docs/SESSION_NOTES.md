@@ -124,3 +124,27 @@ Unchanged: begin **Phase 2 — Lobby System** (PROGRESS.md checklist). Phase 4 i
 Begin **Phase 3 — Word Setup**: implement `submit_secret_word` (validate with `MIN/MAX_WORD_LENGTH` + `VALID_WORD_PATTERN`, store uppercase, emit `opponent_word_ready`), transition to `playing` + `game_started` with a random first turn when both words are in, and replace LobbyPage's Phase-3 placeholder with the secret-word form. Note the two Phase-4 TODOs at `leaveRoom`/grace-expiry call sites (forfeit during `playing`).
 
 ---
+
+## Session 6 — 2026-06-13
+
+### Work Completed
+
+- **Phase 3 (Word Setup) complete.**
+- Shared: new `words.ts` with `normalizeSecretWord` (trim → uppercase → length/charset check) — single validation source for client inline feedback and server authority. `GameView` gained `yourWordReady` / `opponentWordReady` so a refresh during word setup restores the correct screen.
+- Server: `submit_secret_word` handler — phase guard (`INVALID_PHASE`), validation (`INVALID_WORD`), storage on `ServerPlayer.secretWord` (re-submission overwrites before start), `opponent_word_ready` on first submission, `state_sync` ack to the submitter. When both words are in: `GameManager` constructed with boards over each other's words and a random first turn (`crypto.randomInt`), phase → `playing`, personalized `game_started` to each socket.
+- `GameManager` now holds real round state (seats, boards via `boardFor`, active player, winner accessors); `guessLetter` remains the Phase-4 TODO. `roomView.buildRoomView` delegates board/turn/winner fields to the game.
+- Client: `WordSetupForm` component (inline validation, uppercase input); LobbyPage renders the form during `word_setup`, shows "✓ word set / choosing…" badges per player, handles `opponent_word_ready` + `game_started`, and announces who goes first once playing.
+- Tests up to 24: `normalizeSecretWord` cases, GameManager init (board orientation, masked boards, no winner), roomView projection including a deterministic anti-cheat assertion (test words use letters excluded from the room-code alphabet so secrets can never appear in any payload).
+- Live smoke test: invalid-word rejections, ready-flag flow, mid-setup resync, simultaneous personalized `game_started` (consistent first turn, no word leakage), `INVALID_PHASE` after start, `guess_letter` still stubbed, mid-game reconnection restores boards.
+
+### Decisions Made This Session
+
+- Word validation lives in `shared/` — client and server cannot drift.
+- Ready states are part of `GameView` rather than ad-hoc events only, keeping refresh/reconnect consistent (extends ADR-010's state_sync-first philosophy).
+- Re-submitting a word before the round starts overwrites silently (friendly "changed my mind" behaviour).
+
+### Next Recommended Action
+
+Begin **Phase 4 — Core Gameplay** (read ADR-009 first): `GameManager.guessLetter` with turn streaks (correct → guess again, wrong → pass), `guess_result` / `turn_changed` / `game_won` emission, forfeit handling at the two TODO call sites, `opponentWordRevealed` at game over, and the guessing UI (likely a GamePage with keyboard + boards).
+
+---

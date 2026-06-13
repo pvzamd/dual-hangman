@@ -2,7 +2,7 @@
 
 A real-time two-player browser game: each player sets a secret word, then players take turns guessing letters of each other's word — guess right and you keep going, guess wrong and the turn passes. First to fully reveal the opponent's word wins.
 
-**Status:** Phase 2 complete — rooms can be created, joined, left, and rejoined (lobby sync, localStorage identity, 60s-grace reconnection). Word setup (Phase 3) and gameplay (Phase 4) are next.
+**Status:** Phase 3 complete — lobby plus secret-word setup: validated word entry, ready states, and the transition into a started game (random first turn). Guessing gameplay (Phase 4) is next.
 
 > **Contributing or resuming development (human or AI)? Read [START_HERE.md](START_HERE.md) first** — it maps all documentation, the development workflow, and the maintenance rules.
 

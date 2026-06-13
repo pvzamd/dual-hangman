@@ -1,8 +1,12 @@
 import {
   MAX_PLAYER_NAME_LENGTH,
+  MAX_WORD_LENGTH,
+  MIN_WORD_LENGTH,
   RECONNECT_GRACE_SECONDS,
+  normalizeSecretWord,
   type ErrorCode,
 } from '@dual-hangman/shared';
+import { GameManager } from '../game/GameManager.js';
 import type { RoomManager } from '../rooms/RoomManager.js';
 import { buildRoomView, toPlayerInfo } from '../rooms/roomView.js';
 import type { GameServer, GameSocket } from './types.js';
@@ -113,7 +117,52 @@ export function registerSocketHandlers(
     });
   });
 
-  socket.on('submit_secret_word', () => notImplemented(socket, 'submit_secret_word (Phase 3)'));
+  socket.on('submit_secret_word', ({ word }) => {
+    const { roomCode, playerId } = socket.data;
+    const room = roomCode ? roomManager.getRoom(roomCode) : undefined;
+    const player = room && playerId ? roomManager.getPlayer(room, playerId) : undefined;
+    if (!room || !player) {
+      return emitError(socket, 'INVALID_PHASE', 'You are not in a room.');
+    }
+    if (room.phase !== 'word_setup') {
+      return emitError(socket, 'INVALID_PHASE', 'Words can only be set during word setup.');
+    }
+
+    const normalized = typeof word === 'string' ? normalizeSecretWord(word) : null;
+    if (!normalized) {
+      return emitError(
+        socket,
+        'INVALID_WORD',
+        `Words must be ${MIN_WORD_LENGTH}–${MAX_WORD_LENGTH} letters, A–Z only.`,
+      );
+    }
+
+    // Re-submitting before the round starts overwrites the previous word.
+    const firstSubmission = player.secretWord === null;
+    player.secretWord = normalized;
+    room.lastActivityAt = Date.now();
+
+    if (firstSubmission) {
+      socket.to(room.code).emit('opponent_word_ready');
+    }
+    socket.emit('state_sync', { state: buildRoomView(room, player.id) });
+
+    const [a, b] = room.players;
+    if (room.players.length === 2 && a.secretWord && b.secretWord) {
+      room.game = new GameManager(
+        { playerId: a.id, secretWord: a.secretWord },
+        { playerId: b.id, secretWord: b.secretWord },
+      );
+      room.phase = 'playing';
+      // game_started is personalized — each player gets their own view.
+      for (const p of room.players) {
+        if (p.socketId) {
+          io.to(p.socketId).emit('game_started', { state: buildRoomView(room, p.id) });
+        }
+      }
+    }
+  });
+
   socket.on('guess_letter', () => notImplemented(socket, 'guess_letter (Phase 4)'));
   socket.on('chat_message', () => notImplemented(socket, 'chat_message (Phase 6)'));
 }

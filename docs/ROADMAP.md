@@ -33,11 +33,12 @@
 - [x] Identity persisted to localStorage; HomePage rejoin link
 - [x] Vitest started: 12 RoomManager unit tests
 
-## Phase 3 — Word Setup
+## Phase 3 — Word Setup ✅
 
-- [ ] Server: `submit_secret_word` — validate (length, A–Z), store, emit `opponent_word_ready`
-- [ ] Server: transition to `playing` + `game_started` (random first turn) when both words in
-- [ ] Client: secret word input screen (hidden from opponent)
+- [x] Server: `submit_secret_word` — validate (shared `normalizeSecretWord`), store, emit `opponent_word_ready`
+- [x] Server: transition to `playing` + personalized `game_started` (random first turn) when both words in
+- [x] Client: secret word form in lobby with inline validation + ready badges
+- [x] `GameView` gained `yourWordReady`/`opponentWordReady` so refresh mid-setup restores correctly
 
 ## Phase 4 — Core Gameplay
 

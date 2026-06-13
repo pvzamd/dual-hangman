@@ -29,8 +29,8 @@ Dual Hangman is a real-time two-player browser game where players guess each oth
 
 ## Current Status
 
-**Phase 2 — Lobby System (complete)**
+**Phase 3 — Word Setup (complete)**
 
-The lobby works end-to-end: create/join/leave rooms, live lobby sync, localStorage identity, and reconnection with a 60-second grace window (ADR-010). Server logic is unit-tested with Vitest. **Word setup and gameplay are next** — Phase 3 then Phase 4.
+Lobby and word setup work end-to-end: rooms, sync, identity, reconnection, validated secret-word entry with ready states, and the transition to `playing` with personalized `game_started` payloads (random first turn). Server logic carries 24 Vitest tests. **Core gameplay (guessing) is next** — Phase 4, governed by ADR-009.
 
 See [ROADMAP.md](ROADMAP.md) for upcoming phases and [PROGRESS.md](PROGRESS.md) for fine-grained task tracking.

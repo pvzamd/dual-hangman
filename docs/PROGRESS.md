@@ -53,11 +53,16 @@
 - [x] First Vitest tests — 12 RoomManager unit tests
 - [x] End-to-end smoke test of all lobby flows over real sockets
 
-## Phase 3 — Word Setup
+## Phase 3 — Word Setup ✅
 
-- [ ] `submit_secret_word` validation + storage
-- [ ] Transition to `playing` + `game_started` when both words in
-- [ ] Secret word input screen
+- [x] Shared `normalizeSecretWord` — one validation source for client + server
+- [x] `submit_secret_word` handler: phase guard, validation, storage, re-submission overwrites before start
+- [x] Ready states in `GameView` (`yourWordReady` / `opponentWordReady`) — survive refresh via `state_sync`
+- [x] `opponent_word_ready` emitted on first submission
+- [x] Transition to `playing`: GameManager created (boards + random first turn), personalized `game_started` to each player
+- [x] Client: `WordSetupForm` with inline validation; lobby shows ready badges and turn announcement
+- [x] Tests: word validation, GameManager init, roomView projection incl. anti-cheat assertion (24 total)
+- [x] Live smoke test: validation, ready flow, resync mid-setup, game start, no word leakage, mid-game reconnect
 
 ## Phase 4 — Core Gameplay
 

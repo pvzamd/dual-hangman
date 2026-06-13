@@ -32,11 +32,13 @@ dual-hangman/
 │       ├── constants.ts     ← word length limits, room code charset, reconnect grace
 │       ├── types.ts         ← GameView, BoardView, PlayerInfo, RoomPhase, ErrorCode
 │       ├── events.ts        ← ClientToServerEvents / ServerToClientEvents contract
+│       ├── words.ts         ← normalizeSecretWord (one validation source for both sides)
 │       └── index.ts
 ├── client/                  @dual-hangman/client — React SPA
 │   ├── public/
 │   └── src/
 │       ├── pages/           ← HomePage, CreateRoomPage, JoinRoomPage, LobbyPage (wired)
+│       ├── components/      ← WordSetupForm (secret word entry, inline validation)
 │       ├── lib/identity.ts  ← localStorage identity persistence (ADR-010)
 │       ├── socket.ts        ← typed Socket.IO client singleton
 │       ├── App.tsx          ← routes
@@ -46,11 +48,11 @@ dual-hangman/
 │   └── src/
 │       ├── index.ts                         ← Express + Socket.IO bootstrap, /health
 │       ├── socket/types.ts                  ← GameServer/GameSocket generics + SocketData
-│       ├── socket/registerSocketHandlers.ts ← lobby handlers live; word/guess/chat stubbed
+│       ├── socket/registerSocketHandlers.ts ← lobby + word-setup handlers live; guess/chat stubbed
 │       ├── rooms/RoomManager.ts             ← rooms, join/leave, reconnect, grace timers
-│       ├── rooms/RoomManager.test.ts        ← Vitest unit tests
 │       ├── rooms/roomView.ts                ← Room → client-safe GameView projection
-│       └── game/GameManager.ts              ← per-room rules engine (skeleton, Phase 4)
+│       ├── game/GameManager.ts              ← round state: boards, random first turn (guessing = Phase 4)
+│       └── *.test.ts                        ← Vitest unit tests beside the code they cover
 └── docs/
 ```
 
@@ -159,11 +161,19 @@ Compile-time truth: `shared/src/events.ts`. Both sides instantiate Socket.IO wit
 
 ## Game State Model
 
-Clients only ever receive `GameView` — a per-player projection built by `GameManager.buildViewFor(playerId)`:
+Clients only ever receive `GameView` — a per-player projection built by `buildRoomView(room, playerId)` (which delegates board fields to the room's `GameManager` once playing):
 
+- `yourWordReady` / `opponentWordReady` — word-setup ready flags, so a refresh during setup restores the right screen.
 - `yourBoard` — your progress guessing the **opponent's** word (`maskedWord` hides unrevealed letters as `null`).
 - `opponentBoard` — the opponent's progress guessing **your** word.
 - `activePlayerId`, `winnerId`, `gameOverReason`, and `opponentWordRevealed` (populated only at game over).
+
+### Word setup flow (Phase 3)
+
+1. Client validates inline with the shared `normalizeSecretWord`, then emits `submit_secret_word`.
+2. Server re-validates authoritatively (`INVALID_WORD` / `INVALID_PHASE` on failure), stores the word uppercase on `ServerPlayer.secretWord`. Re-submitting before the round starts overwrites.
+3. First submission notifies the opponent (`opponent_word_ready`); every accepted submission acks the submitter with `state_sync`.
+4. When both words are in: a `GameManager` is constructed (boards over each other's words, random first turn via `crypto.randomInt`), phase flips to `playing`, and each player receives a **personalized** `game_started`.
 
 **Anti-cheat invariant:** the opponent's unsolved word never appears in any payload. Guess validation, turn order, and win detection are exclusively server-side.
 

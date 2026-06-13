@@ -55,6 +55,9 @@ export interface GameView {
   phase: RoomPhase;
   you: PlayerInfo;
   opponent: PlayerInfo | null;
+  /** Word-setup ready flags — true once that side's secret word is stored. */
+  yourWordReady: boolean;
+  opponentWordReady: boolean;
   yourBoard: BoardView | null;
   opponentBoard: BoardView | null;
   /** Whose turn it is; null outside the `playing` phase. */

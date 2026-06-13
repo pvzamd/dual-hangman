@@ -8,6 +8,7 @@ import type {
 } from '@dual-hangman/shared';
 import { socket } from '../socket';
 import { clearIdentity, loadIdentity } from '../lib/identity';
+import WordSetupForm from '../components/WordSetupForm';
 
 /**
  * Lobby sync model (ADR-010): on mount we always emit reconnect_player with
@@ -48,6 +49,13 @@ export default function LobbyPage() {
     const onWordSetupStarted = () => {
       setView((v) => (v ? { ...v, phase: 'word_setup' } : v));
     };
+    const onOpponentWordReady = () => {
+      setView((v) => (v ? { ...v, opponentWordReady: true } : v));
+    };
+    const onGameStarted = ({ state }: StateSyncPayload) => {
+      setView(state);
+      setOpponentAway(false);
+    };
     const onOpponentDisconnected = ({ graceSeconds: grace }: { graceSeconds: number }) => {
       setOpponentAway(true);
       setGraceSeconds(grace);
@@ -68,6 +76,8 @@ export default function LobbyPage() {
     socket.on('state_sync', onStateSync);
     socket.on('opponent_joined', onOpponentJoined);
     socket.on('word_setup_started', onWordSetupStarted);
+    socket.on('opponent_word_ready', onOpponentWordReady);
+    socket.on('game_started', onGameStarted);
     socket.on('opponent_disconnected', onOpponentDisconnected);
     socket.on('opponent_reconnected', onOpponentReconnected);
     socket.on('error_occurred', onError);
@@ -79,6 +89,8 @@ export default function LobbyPage() {
       socket.off('state_sync', onStateSync);
       socket.off('opponent_joined', onOpponentJoined);
       socket.off('word_setup_started', onWordSetupStarted);
+      socket.off('opponent_word_ready', onOpponentWordReady);
+      socket.off('game_started', onGameStarted);
       socket.off('opponent_disconnected', onOpponentDisconnected);
       socket.off('opponent_reconnected', onOpponentReconnected);
       socket.off('error_occurred', onError);
@@ -99,28 +111,47 @@ export default function LobbyPage() {
       : view.phase === 'waiting_for_opponent'
         ? 'Waiting for an opponent to join…'
         : view.phase === 'word_setup'
-          ? 'Opponent is here! Word setup arrives in Phase 3.'
-          : `Phase: ${view.phase}`;
+          ? view.yourWordReady
+            ? view.opponentWordReady
+              ? 'Both words locked in — starting…'
+              : 'Word locked in. Waiting for your opponent…'
+            : 'Choose the word your opponent must guess.'
+          : view.phase === 'playing'
+            ? `Game on! ${
+                view.activePlayerId === view.you.id ? 'You go' : `${view.opponent?.name} goes`
+              } first. Guessing arrives in Phase 4.`
+            : `Phase: ${view.phase}`;
+
+  const showWordForm = view?.phase === 'word_setup' && !view.yourWordReady && !opponentAway;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <div className="w-full max-w-sm space-y-4 rounded-xl bg-slate-800 p-6 text-center shadow-lg">
         <h1 className="text-2xl font-bold">Lobby</h1>
-        <p className="text-sm text-slate-400">Share this code with your opponent:</p>
+        {(!view || view.phase === 'waiting_for_opponent') && (
+          <p className="text-sm text-slate-400">Share this code with your opponent:</p>
+        )}
         <p className="font-mono text-4xl font-bold tracking-[0.3em] text-emerald-400">
           {roomCode ?? '—'}
         </p>
 
         <div className="space-y-2 text-left">
-          <PlayerRow label="You" name={view?.you.name} connected={view?.you.connected ?? true} />
+          <PlayerRow
+            label="You"
+            name={view?.you.name}
+            connected={view?.you.connected ?? true}
+            wordReady={view?.phase === 'word_setup' ? view.yourWordReady : undefined}
+          />
           <PlayerRow
             label="Opponent"
             name={view?.opponent?.name}
             connected={(view?.opponent?.connected ?? false) && !opponentAway}
+            wordReady={view?.phase === 'word_setup' ? view.opponentWordReady : undefined}
           />
         </div>
 
         <p className={view ? 'text-slate-300' : 'animate-pulse text-slate-400'}>{status}</p>
+        {showWordForm && <WordSetupForm />}
         {error && (
           <p className="rounded-lg bg-red-900/40 px-3 py-2 text-sm text-red-300">{error}</p>
         )}
@@ -140,15 +171,23 @@ function PlayerRow({
   label,
   name,
   connected,
+  wordReady,
 }: {
   label: string;
   name: string | undefined;
   connected: boolean;
+  /** Shown only during word_setup; undefined hides the badge. */
+  wordReady?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg bg-slate-900 px-3 py-2">
       <span className="text-sm text-slate-400">{label}</span>
       <span className="flex items-center gap-2 font-medium">
+        {wordReady !== undefined && name && (
+          <span className={`text-xs ${wordReady ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {wordReady ? '✓ word set' : 'choosing…'}
+          </span>
+        )}
         {name ?? <span className="text-slate-500">—</span>}
         {name && (
           <span

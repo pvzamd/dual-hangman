@@ -15,13 +15,13 @@ Dual Hangman is a real-time two-player browser game. Each player sets a secret w
 
 ## 2. Current Status
 
-|                     |                                                                                                                                                                   |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Completed**       | Phase 0 (foundation), Phase 1 (scaffolding + typed contract), Phase 2 (lobby system incl. basic reconnection)                                                     |
-| **Current phase**   | **Phase 3 — Word Setup** (not started)                                                                                                                            |
-| **Next task**       | Implement `submit_secret_word` (validation, storage, transition to `playing` + `game_started`); see the Phase 3 checklist in [docs/PROGRESS.md](docs/PROGRESS.md) |
-| **Working**         | Create/join/leave rooms, lobby sync, localStorage identity, reconnection with 60s grace; 12 unit tests; `npm run dev/build/lint/typecheck/test`                   |
-| **Not working yet** | Gameplay — `submit_secret_word`, `guess_letter`, `chat_message` still return `NOT_IMPLEMENTED`                                                                    |
+|                     |                                                                                                                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Completed**       | Phases 0–3: foundation, scaffolding + typed contract, lobby (incl. basic reconnection), word setup                                                                               |
+| **Current phase**   | **Phase 4 — Core Gameplay** (not started)                                                                                                                                        |
+| **Next task**       | Implement `GameManager.guessLetter` per ADR-009 (correct guess keeps the turn, wrong passes it, win = full reveal) + guess UI; checklist in [docs/PROGRESS.md](docs/PROGRESS.md) |
+| **Working**         | Full lobby + word setup: rooms, sync, identity, reconnection, secret-word entry with ready states, transition to `playing` with personalized `game_started`; 24 unit tests       |
+| **Not working yet** | Guessing (`guess_letter` → `NOT_IMPLEMENTED`), game-over flow, chat                                                                                                              |
 
 > Keep this table phase-accurate. Fine-grained, always-current state lives in [docs/PROGRESS.md](docs/PROGRESS.md) and [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md).
 
