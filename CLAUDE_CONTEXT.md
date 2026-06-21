@@ -3,7 +3,7 @@
 > Volatile session snapshot: current phase, detailed task list, repo map, gotchas.
 > Entry point for the project is `START_HERE.md` — read that first; this file is step 3 of its workflow.
 > Update this file at the end of every session.
-> Last updated: 2026-06-13 (end of Session 14)
+> Last updated: 2026-06-14 (end of Session 17 — v1.0.0 released)
 
 ---
 
@@ -17,7 +17,9 @@ A real-time two-player browser word-guessing game: each player sets a secret wor
 
 ## Current Phase
 
-**Phase 7 — Scoring (COMPLETE) — core game feature-complete (Phases 0–7)**
+**Released v1.0.0 — core game feature-complete (Phases 0–7)**
+
+Tagged `v1.0.0` on `develop/v1` (all four packages at 1.0.0; see `CHANGELOG.md`). `main` untouched. Phase 7 (the last) added:
 
 Phase 7 added an in-memory **session score** (ADR-014): each `ServerPlayer` has a `score`; `RoomManager.recordRoundResult(room)` awards the winner +1 — called from `forfeit` and from the guess handler on a solve, so both `word_solved` and `opponent_forfeit` count. `GameView` exposes `yourScore`/`opponentScore`; the client shows a score line during play and on the game-over screen. Score **persists across rematches** (`resetForRematch` leaves it) and **resets when the room ends** (destroy, or a survivor reverting to waiting for a new opponent). No best-of-N, no persistence, no accounts (out of scope). 64 Vitest tests (score lifecycle covered) + live score smoke test. Earlier phases intact (lobby, gameplay, rematch, chat, idle sweep, sound).
 

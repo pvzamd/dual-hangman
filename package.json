@@ -1,6 +1,6 @@
 {
   "name": "dual-hangman",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Real-time two-player hangman — both players race to guess each other's secret word",
   "license": "MIT",

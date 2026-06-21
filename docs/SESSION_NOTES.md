@@ -380,3 +380,25 @@ If deploying: work through `MUST_FIX_BEFORE_DEPLOY.md`, then deploy per `docs/DE
 Unchanged from Session 15 — the game is feature-complete; deploy (work `docs/MUST_FIX_BEFORE_DEPLOY.md` first) or pick a Nice-to-Have.
 
 ---
+
+## Session 17 — 2026-06-14
+
+### Work Completed
+
+- **Cut the v1.0.0 release** (first feature-complete release; Phases 0–7). No code/gameplay/deployment changes — release mechanics + docs only.
+- Bumped all four workspace packages (root, `client`, `server`, `shared`) `0.1.0` → `1.0.0` via `npm version --no-git-tag-version --include-workspace-root --workspaces`; `package-lock.json` synced.
+- Added root **`CHANGELOG.md`** with the v1.0.0 entry (highlights + engineering notes + known limitations); registered it in the START_HERE layout rule and doc index.
+- Updated START_HERE status to "Released as v1.0.0" on `develop/v1`.
+- Verified: format, typecheck, lint, 64 tests, builds — all green at 1.0.0.
+- Tagged **`v1.0.0`** (annotated) on `develop/v1` after the release commit.
+
+### Notes
+
+- Release lives on branch `develop/v1`; `main` remains untouched.
+- **Not pushed** — branch and tag are local; pushing to `origin` (and any GitHub Release) is the user's call (outward-facing). See the final message for the exact push commands.
+
+### Next Recommended Action
+
+Push `develop/v1` and the `v1.0.0` tag if/when ready, then work `docs/MUST_FIX_BEFORE_DEPLOY.md` before any public deploy.
+
+---
