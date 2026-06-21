@@ -1,0 +1,97 @@
+# Dual Hangman
+
+A real-time two-player browser game: each player sets a secret word, then players take turns guessing letters of each other's word — guess right and you keep going, guess wrong and the turn passes. First to fully reveal the opponent's word wins.
+
+**Status:** Phase 4 complete — a full round is playable: lobby, secret-word setup, and turn-based guessing with a live board, on-screen keyboard, and win-by-full-reveal. Game-over polish and rematch (Phase 5) are next.
+
+> **Contributing or resuming development (human or AI)? Read [START_HERE.md](START_HERE.md) first** — it maps all documentation, the development workflow, and the maintenance rules.
+
+---
+
+## How It Works
+
+1. Two players join the same room using a shared room code.
+2. Each player secretly types a word (3–12 letters).
+3. Players take turns guessing letters — a correct guess earns another guess, a wrong one passes the turn. Both boards update live.
+4. First to reveal the opponent's whole word wins. Wrong guesses cost nothing but the turn — the hangman drawing is saved for the loser's defeat screen.
+
+Full rules: [docs/GAME_RULES.md](docs/GAME_RULES.md)
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js **22.12+** (developed on Node 24 LTS — `nvm use 24`)
+- npm 10+
+
+### Setup
+
+```bash
+git clone https://github.com/pvzamd/dual-hangman.git
+cd dual-hangman
+npm install          # installs all three workspaces
+npm run dev          # client on :5173 + server on :3001, concurrently
+```
+
+Open `http://localhost:5173` in two browser tabs (or two browsers) to play locally. To play from a **second device (phone/tablet) on the same Wi-Fi**, see [docs/LOCAL_PLAYTESTING.md](docs/LOCAL_PLAYTESTING.md) — it works out of the box via the Vite "Network" URL.
+
+### Other commands
+
+```bash
+npm run build        # production builds (client → dist, server → single ESM file)
+npm run lint         # ESLint across all workspaces
+npm run typecheck    # tsc across all workspaces
+npm run format       # Prettier
+```
+
+---
+
+## Folder Structure
+
+```
+dual-hangman/
+├── shared/           # @dual-hangman/shared — game types + typed socket contract
+│   └── src/          # constants.ts, types.ts, events.ts
+├── client/           # React 19 + TypeScript + Vite + Tailwind 4 frontend
+│   ├── public/
+│   └── src/          # pages/, socket.ts, App.tsx
+├── server/           # Node + Express 5 + Socket.IO backend
+│   └── src/          # index.ts, socket/, rooms/, game/
+├── docs/             # project documentation (see below)
+├── START_HERE.md     # entry point for any new session — read first
+└── CLAUDE_CONTEXT.md # volatile session snapshot (phase, tasks, gotchas)
+```
+
+---
+
+## Documentation
+
+| File                                                   | Purpose                                           |
+| ------------------------------------------------------ | ------------------------------------------------- |
+| [START_HERE.md](START_HERE.md)                         | **Entry point** — doc map, workflow, AI handoff   |
+| [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)   | Goals, tech choices, status                       |
+| [docs/GAME_RULES.md](docs/GAME_RULES.md)               | Source of truth for game rules                    |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | System design, socket contract, models, lifecycle |
+| [docs/ROADMAP.md](docs/ROADMAP.md)                     | Planned phases and future features                |
+| [docs/PROGRESS.md](docs/PROGRESS.md)                   | Checkbox progress tracker                         |
+| [docs/SESSION_NOTES.md](docs/SESSION_NOTES.md)         | Development log by session                        |
+| [docs/DECISIONS.md](docs/DECISIONS.md)                 | Architectural decision records (ADRs)             |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | Hosting and environment variable guide            |
+| [docs/LOCAL_PLAYTESTING.md](docs/LOCAL_PLAYTESTING.md) | Run locally + play from a 2nd device on the LAN   |
+| [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md)                 | AI session continuity context                     |
+
+---
+
+## Tech Stack
+
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4, react-router 7
+- **Backend:** Node.js, Express 5, Socket.IO 4, TypeScript (tsx dev / tsup build)
+- **Shared:** `@dual-hangman/shared` — one strongly typed Socket.IO event contract for both sides
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE)
